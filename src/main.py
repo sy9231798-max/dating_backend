@@ -7,7 +7,6 @@ from fastapi.openapi.utils import get_openapi
 from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 
-from parameter import SECRET_KEY, ALGORITHM
 from src.api_config import api_router
 from src.chat_handler import ChatHandler
 from src.database import engine, get_session
