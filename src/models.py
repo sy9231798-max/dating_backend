@@ -1,3 +1,8 @@
 from src.user.models import (
-    UserModel
+    UserModel,
+    UserAdditionPicture
+)
+
+from src.auth.models import (
+    OtpModel
 )
