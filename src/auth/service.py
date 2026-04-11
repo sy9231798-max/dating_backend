@@ -230,8 +230,8 @@ def store_client_profile_detail(
         db_user.dob = user_data.dob
         db_user.gender = user_data.gender
 
-        # db_user.state = user_data.state
-        # db_user.city = user_data.city
+        db_user.state = user_data.state
+        db_user.city = user_data.city
         db.commit()
         db.refresh(db_user)
         return {

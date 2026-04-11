@@ -7,11 +7,7 @@ from sqlmodel import Field, SQLModel, Relationship
 
 from enum import Enum
 
-
-class Gender(str, Enum):
-    MALE = "male"
-    FEMALE = "female"
-    OTHER = "other"
+from src.user.enums import Gender, AccountType
 
 
 class UserBaseModel(SQLModel):
@@ -44,7 +40,7 @@ class UserModel(UserBaseModel, table=True):
     step_1_error: Optional[str] = Field(default="PENDING")
     step_2_error: Optional[str] = Field(default="PENDING")
     step_3_error: Optional[str] = Field(default="PENDING")
-    account_type: int = Field(default=2, description="1 For Client And 2 For User")
+    account_type: AccountType = Field(default=AccountType.USER)
     updated_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     )
@@ -62,4 +58,27 @@ class UserAdditionPicture(SQLModel, table=True):
     )
     updated_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )
+
+
+
+class ConversationTable(SQLModel, table=True):
+    __tablename__ = "conversation"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_a_id: int = Field(foreign_key="user.id", nullable=False)
+    user_b_id: int = Field(foreign_key="user.id", nullable=False)
+    unread_count_a: int = Field(default=0)
+    unread_count_b: int = Field(default=0)
+    last_message: str = Field(default=None)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )
+    user_a: Optional["UserModel"] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "ConversationTable.user_a_id"}
+    )
+    user_b: Optional["UserModel"] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "ConversationTable.user_b_id"}
     )

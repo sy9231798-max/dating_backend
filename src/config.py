@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
@@ -11,6 +12,7 @@ class Settings(BaseSettings):
     PGDB_DB: str
     PGDB_USER: str
     PGDB_PASSWORD: str
+    MONGODB_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -24,6 +26,7 @@ class Settings(BaseSettings):
             f"postgresql://{self.PGDB_USER}:{self.PGDB_PASSWORD}"
             f"@{self.PGDB_HOST}:{self.PGDB_PORT}/{self.PGDB_DB}"
         )
+
 
 
 

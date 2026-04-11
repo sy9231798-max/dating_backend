@@ -1,12 +1,22 @@
 from datetime import datetime
 from typing import List, Optional
 
-from src.user.models import UserModel, UserAdditionPicture, UserBaseModel
+from pydantic import BaseModel
+
+from src.user.models import Gender
 
 
-
-class MeInformationResponse(UserBaseModel):  # ✅ non-table model
+class UserDataResponse(BaseModel):
     id: int
-    addition_images: List[UserAdditionPicture]
+    first_name: str
+    last_name: str
+    email: str
+    profile_picture: str
+    video_picture: str
+    dob: str
+    gender: Gender
+    hobby: List[str]
+    state: str
+    city: str
+    created_at: datetime
     is_active: bool
-    account_type: int

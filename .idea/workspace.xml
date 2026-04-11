@@ -5,17 +5,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e23dc819-85e3-4c7c-b528-b04b71c03aad" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/user/enums.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/DatingBackend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/DatingBackend.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/auth/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/auth/service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/chat_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/chat_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/model_wrapper.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/model_wrapper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />

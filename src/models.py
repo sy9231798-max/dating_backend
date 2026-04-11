@@ -1,6 +1,7 @@
 from src.user.models import (
     UserModel,
-    UserAdditionPicture
+    UserAdditionPicture,
+    ConversationTable
 )
 
 from src.auth.models import (

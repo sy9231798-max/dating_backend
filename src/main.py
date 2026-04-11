@@ -4,18 +4,26 @@ import jwt
 import socketio
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.openapi.utils import get_openapi
+from motor.motor_asyncio import AsyncIOMotorClient
 from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 
 from src.api_config import api_router
 from src.chat_handler import ChatHandler
-from src.database import engine, get_session
+from src.database import engine, get_session, settings
+from sqlmodel import SQLModel, Session
 import src.models
+
+from jwt.exceptions import PyJWTError
 from src.token_helper import create_token, verify_token
+
 
 fast_app = FastAPI()
 
-from sqlmodel import SQLModel, Session
+client = AsyncIOMotorClient(settings.MONGODB_URL)
+database = client.chat_app  # Database Name
+message_collection = database.get_collection("messages")
+
 
 SQLModel.metadata.create_all(engine)
 fast_app.add_middleware(
@@ -33,11 +41,8 @@ sio = socketio.AsyncServer(
     ping_interval=10
 )
 fast_app.include_router(api_router, prefix="/v1")
-chatHandler = ChatHandler(sio)
+chatHandler = ChatHandler(sio,message_collection)
 
-
-class JWTError:
-    pass
 
 
 @sio.event
@@ -53,7 +58,7 @@ async def connect(sid, environ,auth):
     try:
         payload = verify_token(token)
         await sio.save_session(sid, {"user": payload})
-    except JWTError:
+    except PyJWTError:
         return False
 
 
@@ -75,7 +80,7 @@ async def user_connect(sid, data=None):
 @sio.on("message")
 async def user_message(sid, data):
     if data is not None:
-        await chatHandler.handle_message(data)
+        await chatHandler.handle_message(data,db = next(get_session()))
 
 
 @sio.event
