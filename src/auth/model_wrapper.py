@@ -3,7 +3,7 @@ from typing import List
 from pydantic import BaseModel
 
 from src.user.models import (
-    UserModel, Gender
+    UserModel, Gender, UserAdditionPicture
 )
 
 
@@ -15,6 +15,7 @@ class LoginRequestBody(BaseModel):
 class LoginResponseWrapper(BaseModel):
     user_data: UserModel
     token: str
+    addition_image: List[UserAdditionPicture]
     error_code: int
     step1_error_message: str
     step2_error_message: str

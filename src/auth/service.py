@@ -83,8 +83,8 @@ def otp_verification(phone_number: str, otp: str, db: Session):
         .where(
             OtpModel.phone_number == phone_number,
             OtpModel.is_used == False,
-            OtpModel.expires_at > datetime.now().astimezone()
         )
+        .order_by(OtpModel.created_at.desc())
     ).first()
 
     if not record:
