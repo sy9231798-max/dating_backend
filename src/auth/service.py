@@ -130,6 +130,7 @@ def otp_verification(phone_number: str, otp: str, db: Session):
         error_code=error_code,
         step2_error_message=db_user.step_2_error,
         step3_error_message=db_user.step_3_error,
+        addition_image=db_user.addition_images,
         step1_error_message=str(db_user.step_1_error)
     )
 

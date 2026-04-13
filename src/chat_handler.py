@@ -8,7 +8,7 @@ from src.user.models import UserModel, ConversationTable
 
 
 class ChatHandler:
-    def __init__(self, sio: AsyncServer,message_collection: AsyncIOMotorCollection):
+    def __init__(self, sio: AsyncServer, message_collection: AsyncIOMotorCollection):
         self.sio = sio
         self.connected_users = {}
         self.message_collection = message_collection
@@ -29,22 +29,26 @@ class ChatHandler:
         await self.sio.emit("user_online", user_id)
 
     async def handle_message(self, data: str, db: Session):
+
         data = json.loads(data)
-        receiver = data["to"]
-        sender = data["from"]
+        receiver = str(data["to"])
+        sender = str(data["from"])
+        print(receiver in self.connected_users)
         if receiver not in self.connected_users:
             return
 
         message_type = data["type"]
+
+        print(message_type)
         match message_type:
             case "makeCall":
                 await self.sio.emit("makeCall", data, to=self.connected_users[receiver])
                 return
             case "newMessage":
                 message_type = data["message_type"]
-                await self.sio.emit("newMessage", data, to=self.connected_users[receiver])
                 user_a = min(sender, receiver)
                 user_b = max(sender, receiver)
+                last_message = ""
                 match message_type:
                     case "text":
                         last_message = data.get("message", "")
@@ -56,7 +60,7 @@ class ChatHandler:
                     ConversationTable
                 ).where(
                     ConversationTable.user_a_id == user_a, ConversationTable.user_a_id == user_b)
-                ).one()
+                ).one_or_none()
 
                 if not db_conversation:
                     conversation = ConversationTable(
@@ -68,6 +72,7 @@ class ChatHandler:
                     )
                     db.add(conversation)
                     db.commit()
+                    await self.sio.emit("newConversation", data, to=self.connected_users[receiver])
                     return
 
                 db_conversation.last_message = last_message
@@ -77,6 +82,7 @@ class ChatHandler:
                     db_conversation.unread_count_a += 1
 
                 db.commit()
+                await self.sio.emit("newMessage", data, to=self.connected_users[receiver])
                 await self.message_collection.insert_one(data)
                 return
             case "typingIndictor":
@@ -101,6 +107,7 @@ class ChatHandler:
 
         db_user.is_active = False
         db.commit()
-        del self.connected_users[user_id]
+        if user_id in self.connected_users:
+            del self.connected_users[user_id]
         await self.sio.emit("user_offline", user_id)
         print(f"{user_id} is offline")

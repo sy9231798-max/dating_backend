@@ -40,6 +40,8 @@ class UserModel(UserBaseModel, table=True):
     step_1_error: Optional[str] = Field(default="PENDING")
     step_2_error: Optional[str] = Field(default="PENDING")
     step_3_error: Optional[str] = Field(default="PENDING")
+    lvl : Optional[int] = Field(default=1)
+    score: Optional[int] = Field(default=0)
     account_type: AccountType = Field(default=AccountType.USER)
     updated_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
