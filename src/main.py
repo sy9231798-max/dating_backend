@@ -12,12 +12,12 @@ from starlette.staticfiles import StaticFiles
 from src.api_config import api_router
 from src.chat_handler import ChatHandler
 from src.database import engine, get_session, settings
-from sqlmodel import SQLModel, Session
+from sqlmodel import SQLModel, Session, select
 import src.models
 
 from jwt.exceptions import PyJWTError
 from src.token_helper import create_token, verify_token
-
+from src.user.models import ConversationTable
 
 fast_app = FastAPI()
 
@@ -88,11 +88,25 @@ async def user_message(sid, data):
     if data is not None:
         await chatHandler.handle_message(data,db = next(get_session()))
 
+@sio.on("call")
+async def user_calls(sid, data):
+
+    print(f"Call received {data}")
+    if data is not None:
+        await chatHandler.handle_call(data,db = next(get_session()))
+
 
 @sio.event
 async def disconnect(sid):
     db = next(get_session())
     await chatHandler.user_disconnected(sid,db=db)
 
+
+
+@fast_app.get("/")
+def root(db: Session = Depends(get_session)):
+
+
+    return {"Helsslo": ""}
 
 app = socketio.ASGIApp(sio, other_asgi_app=fast_app)

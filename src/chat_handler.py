@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Optional
 import json
 
@@ -5,6 +6,16 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from socketio import AsyncServer
 from sqlmodel import Session, select
 from src.user.models import UserModel, ConversationTable
+
+
+class MessageType(str, Enum):
+    NEW_MESSAGE = "newMessage"
+    TYPING_INDICATOR = "typingIndicator"
+
+
+class MessageContentType(str, Enum):
+    Image = "image"
+    Text = "text"
 
 
 class ChatHandler:
@@ -28,8 +39,16 @@ class ChatHandler:
         self.connected_users[user_id] = sid
         await self.sio.emit("user_online", user_id)
 
-    async def handle_message(self, data: str, db: Session):
+    # MessageBody()
+    # {
+    #     "to": 1,
+    #     "from": 2,
+    #     "type": MessageType.NEW_MESSAGE,
+    #     "message_type": MessageContentType.Text,
+    #     "message": "Hello World"
+    # }
 
+    async def handle_message(self, data: str, db: Session):
         data = json.loads(data)
         receiver = str(data["to"])
         sender = str(data["from"])
@@ -41,9 +60,6 @@ class ChatHandler:
 
         print(message_type)
         match message_type:
-            case "makeCall":
-                await self.sio.emit("makeCall", data, to=self.connected_users[receiver])
-                return
             case "newMessage":
                 message_type = data["message_type"]
                 user_a = min(sender, receiver)
@@ -56,11 +72,8 @@ class ChatHandler:
                         last_message = "image"
                     case _:
                         last_message = "other"
-                db_conversation = db.exec(select(
-                    ConversationTable
-                ).where(
-                    ConversationTable.user_a_id == user_a, ConversationTable.user_a_id == user_b)
-                ).one_or_none()
+                db_conversation = db.exec(select(ConversationTable).where(ConversationTable.user_a_id == user_a,
+                                                                          ConversationTable.user_b_id == user_b)).first()
 
                 if not db_conversation:
                     conversation = ConversationTable(
@@ -91,8 +104,36 @@ class ChatHandler:
         if receiver in self.connected_users:
             await self.sio.emit(type, data)
 
-    async def user_disconnected(self, sid: Any, db: Session):
+    async def handle_call(self, data: str, db: Session):
+        data = json.loads(data)
+        receiver = str(data["to"])
+        sender = str(data["from"])
+        if receiver not in self.connected_users:
+            return
 
+        message_type = data["type"]
+        match message_type:
+            case "makeCall":
+                db_user = db.exec(select(UserModel).where(UserModel.id == receiver)).first()
+                await self.sio.emit("callReceived", {
+                    "from": sender,
+                    "user_detail": db_user.to_dict(),
+                }, to=self.connected_users[receiver])
+                return
+            case "answerCall":
+                await self.sio.emit("callAnswered", {
+                    "from": sender,
+                    "sdpAnswer": data["sdpAnswer"],
+                }, to=self.connected_users[receiver])
+                return
+            case "iceCandidate":
+                ice_candidate = data["iceCandidate"]
+                await self.sio.emit("iceCandidate", {
+                    "from": sender,
+                    "iceCandidate": ice_candidate,
+                }, to=self.connected_users[receiver])
+
+    async def user_disconnected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
         user = session.get("user") if session else None
         user_id = user["user_id"]
