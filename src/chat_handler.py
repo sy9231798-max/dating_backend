@@ -53,12 +53,13 @@ class ChatHandler:
         receiver = str(data["to"])
         sender = str(data["from"])
         print(receiver in self.connected_users)
+
+        print(self.connected_users.keys())
         if receiver not in self.connected_users:
             return
 
         message_type = data["type"]
 
-        print(message_type)
         match message_type:
             case "newMessage":
                 message_type = data["message_type"]
@@ -74,7 +75,6 @@ class ChatHandler:
                         last_message = "other"
                 db_conversation = db.exec(select(ConversationTable).where(ConversationTable.user_a_id == user_a,
                                                                           ConversationTable.user_b_id == user_b)).first()
-
                 if not db_conversation:
                     conversation = ConversationTable(
                         user_a_id=user_a,
@@ -100,6 +100,7 @@ class ChatHandler:
                 return
             case "typingIndictor":
                 await self.sio.emit("typingIndictor", data=sender, to=self.connected_users[receiver])
+
 
         if receiver in self.connected_users:
             await self.sio.emit(type, data)

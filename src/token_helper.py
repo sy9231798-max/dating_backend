@@ -11,7 +11,7 @@ from src.user.models import UserModel
 
 def create_token(user: UserModel, isClient: bool) -> str:
     token_data = {
-        "user_id": str(user.id),
+        "user_id": user.id,
         "email": user.email,
         "role": "client" if isClient else "user",
         "exp": datetime.utcnow() + timedelta(days=30)

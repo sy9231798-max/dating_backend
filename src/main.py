@@ -16,14 +16,12 @@ from sqlmodel import SQLModel, Session, select
 import src.models
 
 from jwt.exceptions import PyJWTError
+
+from src.mongo_helper import message_collection
 from src.token_helper import create_token, verify_token
-from src.user.models import ConversationTable
 
 fast_app = FastAPI()
 
-client = AsyncIOMotorClient(settings.MONGODB_URL)
-database = client.chat_app  # Database Name
-message_collection = database.get_collection("messages")
 
 
 SQLModel.metadata.create_all(engine)
@@ -68,10 +66,8 @@ async def connect(sid, environ,auth):
 
 @sio.on("agent_connect")
 async def agent_connect(sid, data=None):
-
-    if data is not None:
-        db = next(get_session())
-        await chatHandler.user_connected(sid,db=db)
+    db = next(get_session())
+    await chatHandler.user_connected(sid,db=db)
 
 
 @sio.on("user_connect")
