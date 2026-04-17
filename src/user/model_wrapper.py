@@ -54,24 +54,27 @@ class ConversationDataResponse(BaseModel):
 
 
 class MessageResponse(BaseModel):
-    id: str
+    id: Optional[str] = None
+    conversation_id: int
     receiver: int
     sender: int
-    type: str
     message_type: str
-    message: str
+    message: Optional[str] = None
+    image: Optional[str] = None
+    send_at: datetime
 
     class Config:
         populate_by_name = True
-
 
     @classmethod
     def from_mongodb(cls, message: Mapping[str, Any]) -> MessageResponse:
         return MessageResponse(
             id=str(message.get('_id')),
-            receiver=message.get("to"),
-            sender=message.get("from"),
-            type=message.get("type"),
+            conversation_id=message.get('conversation_id'),
+            receiver=message.get("receiver"),
+            sender=message.get("sender"),
             message_type=message.get("message_type"),
-            message=message.get("message")
+            message=message.get("message"),
+            image=message.get("image"),
+            send_at=message.get("send_at"),
         )

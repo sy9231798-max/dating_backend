@@ -49,9 +49,9 @@ def fetch_profile_status(
                 detail=f"User with id {user_id} not found"
             )
         any_error = (
-                db_user.step_1_error not in ["PENDING", "COMPLETED"]
-                or db_user.step_2_error not in ["PENDING", "COMPLETED"]
-                or db_user.step_3_error not in ["PENDING", "COMPLETED"]
+                db_user.step_1_error not in ["PENDING", "DONE"]
+                or db_user.step_2_error not in ["PENDING", "DONE"]
+                or db_user.step_3_error not in ["PENDING", "DONE"]
         )
         all_pending = (
                 db_user.step_1_error in ["PENDING"]
@@ -149,27 +149,22 @@ async def fetch_all_message(
                 detail=f"Conversation with id {conversation_id} not found"
             )
 
-        print(db_conversation.model_dump())
-        print(f"User_a-id {type(db_conversation.user_a_id)} UserId {type(user_id)} {db_conversation.user_a_id != user_id}")
-        if str(db_conversation.user_a_id) != user_id and str(db_conversation.user_b_id) != user_id:
+        if db_conversation.user_a_id != user_id and db_conversation.user_b_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"This Conversation not belong to you"
             )
 
-        user_a = db_conversation.user_a_id
-        user_b = db_conversation.user_b_id
         messages = await message_collection.find({
-            "$or": [
-                {"from": user_a, "to": user_b},
-                {"from": user_b, "to": user_a}
-            ]
-        }).sort("created_at", 1).to_list(length=None)
+            "conversation_id": conversation_id,
+        }).sort("send_at", -1).to_list(length=None)
+
+        print(f"Message Length {len(messages)} ${messages[0]}")
         return [MessageResponse.from_mongodb(msg) for msg in messages]
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to Login: {str(e)}"
+            detail=f"Failed to fetch all message: {str(e)}"
         )

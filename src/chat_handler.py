@@ -1,10 +1,14 @@
+import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, clear_overloads
 import json
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 from socketio import AsyncServer
+from sqlalchemy import func
 from sqlmodel import Session, select
+
+from src.user.model_wrapper import ConversationDataResponse, MessageResponse
 from src.user.models import UserModel, ConversationTable
 
 
@@ -50,8 +54,8 @@ class ChatHandler:
 
     async def handle_message(self, data: str, db: Session):
         data = json.loads(data)
-        receiver = str(data["to"])
-        sender = str(data["from"])
+        receiver = data["receiver"]
+        sender = data["sender"]
         print(receiver in self.connected_users)
 
         print(self.connected_users.keys())
@@ -85,22 +89,32 @@ class ChatHandler:
                     )
                     db.add(conversation)
                     db.commit()
-                    await self.sio.emit("newConversation", data, to=self.connected_users[receiver])
-                    return
-
-                db_conversation.last_message = last_message
-                if sender == user_a:
-                    db_conversation.unread_count_b += 1
+                    db.refresh(conversation)
+                    await self.sio.emit("newConversation",
+                                        ConversationDataResponse.conversation(receiver,
+                                                                              conversation=conversation).model_dump_json(),
+                                        to=self.connected_users[receiver])
                 else:
-                    db_conversation.unread_count_a += 1
+                    db_conversation.last_message = last_message
+                    if sender == user_a:
+                        db_conversation.unread_count_b += 1
+                    else:
+                        db_conversation.unread_count_a += 1
+                    db.commit()
 
-                db.commit()
-                await self.sio.emit("newMessage", data, to=self.connected_users[receiver])
-                await self.message_collection.insert_one(data)
+                message = MessageResponse(
+                    conversation_id=db_conversation.id,
+                    receiver=receiver,
+                    sender=sender,
+                    message_type=message_type,
+                    message=data.get("message", ""),
+                    send_at=datetime.datetime.now()
+                )
+                await self.sio.emit("newMessage", message.model_dump_json(), to=self.connected_users[receiver])
+                await self.message_collection.insert_one(message.model_dump(exclude_none=True))
                 return
             case "typingIndictor":
                 await self.sio.emit("typingIndictor", data=sender, to=self.connected_users[receiver])
-
 
         if receiver in self.connected_users:
             await self.sio.emit(type, data)
