@@ -1,15 +1,16 @@
 from typing import List
 
 from fastapi import APIRouter, Header, Depends, HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 from starlette import status
 
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.database import get_session
 from src.mongo_helper import message_collection
 from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse
+from src.user.models import FriendTable, UserModel
 from src.user.service import (get_my_information, fetch_explore, fetch_profile_status, fetch_conversation,
-                              fetch_all_message)
+                              fetch_all_message, sent_request, friend_request_action)
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ async def get_me_information(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to Login: {str(e)}"
+            detail=f"Failed get my information: {str(e)}"
         )
 
 
@@ -42,7 +43,7 @@ async def get_profile_status(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to Login: {str(e)}"
+            detail=f"Failed to get profile-status: {str(e)}"
         )
 
 
@@ -58,7 +59,7 @@ async def get_explore_data(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to Login: {str(e)}"
+            detail=f"Failed to fetch explore: {str(e)}"
         )
 
 
@@ -74,11 +75,11 @@ async def get_conversation_data(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to Login: {str(e)}"
+            detail=f"Failed to fetch conversation: {str(e)}"
         )
 
 
-@router.get("/messages/{conversation_id}",response_model=List[MessageResponse])
+@router.get("/messages/{conversation_id}", response_model=List[MessageResponse])
 async def get_conversation_data(
         conversation_id: int,
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
@@ -92,5 +93,51 @@ async def get_conversation_data(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to Login: {str(e)}"
+            detail=f"Failed to fetch message: {str(e)}"
+        )
+
+
+@router.get("/send-request")
+async def send_request(
+        friend_id: int,
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return sent_request(
+            friend_id=friend_id,
+            token=user_token,
+            db=db
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch message: {str(e)}"
+        )
+
+
+
+@router.get("/friend-request-response")
+async def friend_request_response(
+        request_id:int,
+        is_accepted: bool,
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+
+        return friend_request_action(
+            is_accept=is_accepted,
+            request_id=request_id,
+            token=user_token,
+            db=db,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch message: {str(e)}"
         )

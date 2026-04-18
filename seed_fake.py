@@ -8,7 +8,7 @@ from enum import Enum
 
 from src.database import settings
 from src.user.enums import Gender, AccountType
-from src.user.models import UserModel, UserAdditionPicture
+from src.user.models import UserModel, UserAdditionPicture, FriendTable
 
 DATABASE_URL = settings.SQLALCHEMY_DATABASE_URL
 
@@ -36,8 +36,8 @@ def make_user(fake: Faker) -> UserModel:
         email=fake.unique.email(),
 
         phone_number=generate_indian_phone_number(),
-        profile_picture=f"uploads/20260409_175734_545622.jpg",
-        video_picture=f"uploads/20260411_203720_977044.mp4",
+        profile_picture=f"uploads/20260410_100125_488177.png",
+        video_picture=f"uploads/20260410_123626_880724.mp4",
         dob=dob.isoformat(),
         gender=gender,
         hobby=random.sample(HOBBIES, k=random.randint(1, 4)),
@@ -55,9 +55,19 @@ def make_user(fake: Faker) -> UserModel:
 
 def make_addition_images(userId: int) -> UserAdditionPicture:
     return UserAdditionPicture(
-        image_path="uploads/20260411_203721_013867.jpeg" if userId % 2 == 0 else "uploads/20260412_170232_706037.jpg",
+        image_path="uploads/20260410_100125_489400.png" if userId % 2 == 0 else "uploads/20260410_123122_937257.png",
         user_id=userId
     )
+
+
+def make_friends(userId: int) -> List[FriendTable]:
+    return [
+        FriendTable(
+            user_id=userId,
+            friend_id= i
+        )
+        for i in range(1,1001)
+    ]
 
 
 def seed(n: int = 100) -> None:
@@ -68,7 +78,6 @@ def seed(n: int = 100) -> None:
     Faker.seed(42)  # reproducible data; remove for random
 
     users = [make_user(fake) for _ in range(n)]
-
     with Session(engine) as session:
         session.add_all(users)
         session.commit()
@@ -76,10 +85,16 @@ def seed(n: int = 100) -> None:
             all_addition_images = [make_addition_images(i.id) for _ in range(3)]
             session.add_all(all_addition_images)
             session.commit()
+            all_friends = make_friends(i.id)
+            session.add_all(all_friends)
+            session.commit()
+
+
+
 
 
     print(f"✅  Inserted {n} fake users into '{DATABASE_URL}'")
 
 
 if __name__ == "__main__":
-    seed(100)
+    seed(1000)

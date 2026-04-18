@@ -40,7 +40,7 @@ class UserModel(UserBaseModel, table=True):
     step_1_error: Optional[str] = Field(default="PENDING")
     step_2_error: Optional[str] = Field(default="PENDING")
     step_3_error: Optional[str] = Field(default="PENDING")
-    lvl : Optional[int] = Field(default=1)
+    lvl: Optional[int] = Field(default=1)
     score: Optional[int] = Field(default=0)
     account_type: AccountType = Field(default=AccountType.USER)
     updated_at: datetime = Field(
@@ -63,7 +63,6 @@ class UserAdditionPicture(SQLModel, table=True):
     )
 
 
-
 class ConversationTable(SQLModel, table=True):
     __tablename__ = "conversation"
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -83,4 +82,24 @@ class ConversationTable(SQLModel, table=True):
     )
     user_b: Optional["UserModel"] = Relationship(
         sa_relationship_kwargs={"foreign_keys": "ConversationTable.user_b_id"}
+    )
+
+
+class FriendTable(SQLModel, table=True):
+    __tablename__ = "friend"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    friend_id: int = Field(foreign_key="user.id", nullable=False)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+
+
+class FriendRequestTable(SQLModel, table=True):
+    __tablename__ = "friend_request"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    sender_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
