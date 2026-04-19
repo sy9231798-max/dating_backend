@@ -4,7 +4,7 @@ from typing import List, Optional, Mapping, Any
 from pydantic import BaseModel, Field
 from sqlalchemy.sql.functions import user
 
-from src.user.models import Gender, ConversationTable, UserModel
+from src.user.models import Gender, ConversationTable, UserModel, UserAdditionPicture
 
 
 class UserDataResponse(BaseModel):
@@ -19,7 +19,10 @@ class UserDataResponse(BaseModel):
     hobby: List[str]
     state: str
     city: str
+    lvl: int
+    score:int
     created_at: datetime
+    addition_images: List[UserAdditionPicture]
     is_active: bool
 
 

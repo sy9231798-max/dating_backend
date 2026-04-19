@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorCollection
+from sqlalchemy import asc
 from sqlmodel import Session, select, or_, desc
 from starlette import status
 
@@ -90,7 +91,7 @@ def fetch_explore(
     try:
         verify_token(token)
 
-        statement = select(UserModel).where(UserModel.account_type == AccountType.AGENT)
+        statement = select(UserModel).where(UserModel.account_type == AccountType.AGENT).order_by(desc(UserModel.score))
         users = db.exec(statement).all()
         return users
     except HTTPException:

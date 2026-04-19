@@ -90,10 +90,23 @@ class ChatHandler:
                     db.add(conversation)
                     db.commit()
                     db.refresh(conversation)
-                    await self.sio.emit("newConversation",
-                                        ConversationDataResponse.conversation(receiver,
-                                                                              conversation=conversation).model_dump_json(),
+                    message = MessageResponse(
+                        conversation_id=conversation.id,
+                        receiver=receiver,
+                        sender=sender,
+                        message_type=message_type,
+                        message=data.get("message", ""),
+                        send_at=datetime.datetime.now()
+                    )
+                    print(f"New Conversation Added To {receiver}")
+
+                    await self.sio.emit("newConversation", ConversationDataResponse.conversation(receiver,
+                                                                                                 conversation=conversation).model_dump_json(),
                                         to=self.connected_users[receiver])
+
+                    print(f"CurrentConversation Sent To Sender {sender}")
+                    await self.sio.emit("currentConversation", message.model_dump_json(),
+                                        to=self.connected_users[sender])
                 else:
                     db_conversation.last_message = last_message
                     if sender == user_a:
@@ -102,14 +115,14 @@ class ChatHandler:
                         db_conversation.unread_count_a += 1
                     db.commit()
 
-                message = MessageResponse(
-                    conversation_id=db_conversation.id,
-                    receiver=receiver,
-                    sender=sender,
-                    message_type=message_type,
-                    message=data.get("message", ""),
-                    send_at=datetime.datetime.now()
-                )
+                    message = MessageResponse(
+                        conversation_id=db_conversation.id,
+                        receiver=receiver,
+                        sender=sender,
+                        message_type=message_type,
+                        message=data.get("message", ""),
+                        send_at=datetime.datetime.now()
+                    )
                 await self.sio.emit("newMessage", message.model_dump_json(), to=self.connected_users[receiver])
                 await self.message_collection.insert_one(message.model_dump(exclude_none=True))
                 return
@@ -121,32 +134,32 @@ class ChatHandler:
 
     async def handle_call(self, data: str, db: Session):
         data = json.loads(data)
-        receiver = str(data["to"])
-        sender = str(data["from"])
-        if receiver not in self.connected_users:
-            return
-
-        message_type = data["type"]
-        match message_type:
+        call_type = data["type"]
+        match call_type:
             case "makeCall":
-                db_user = db.exec(select(UserModel).where(UserModel.id == receiver)).first()
-                await self.sio.emit("callReceived", {
-                    "from": sender,
-                    "user_detail": db_user.to_dict(),
-                }, to=self.connected_users[receiver])
+                receiver = data["receiverId"]
+                sender_details = data["callerDetail"]
+                await self.sio.emit("callReceived",
+                                    {
+                                        "sdpOffer": data["sdpOffer"],
+                                        "sender_details": sender_details,
+                                    },
+                                    to=self.connected_users[receiver]
+                                    )
                 return
             case "answerCall":
+                caller_id = data["callerId"]
                 await self.sio.emit("callAnswered", {
-                    "from": sender,
                     "sdpAnswer": data["sdpAnswer"],
-                }, to=self.connected_users[receiver])
+                },
+                                    to=self.connected_users[caller_id])
                 return
             case "iceCandidate":
                 ice_candidate = data["iceCandidate"]
-                await self.sio.emit("iceCandidate", {
-                    "from": sender,
-                    "iceCandidate": ice_candidate,
-                }, to=self.connected_users[receiver])
+                # await self.sio.emit("iceCandidate", {
+                #     "from": "sender",
+                #     "iceCandidate": ice_candidate,
+                # }, to=self.connected_users[receiver])
 
     async def user_disconnected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
