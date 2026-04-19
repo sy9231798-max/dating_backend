@@ -5,6 +5,7 @@ import socketio
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.openapi.utils import get_openapi
 from motor.motor_asyncio import AsyncIOMotorClient
+from sqlalchemy import text
 from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
@@ -23,6 +24,9 @@ from src.token_helper import create_token, verify_token
 fast_app = FastAPI()
 
 
+with engine.connect() as conn:
+    conn.execute(text('SET search_path TO "Dating_stomachtwo"'))
+    conn.commit()
 
 SQLModel.metadata.create_all(engine)
 fast_app.add_middleware(
@@ -101,8 +105,6 @@ async def disconnect(sid):
 
 @fast_app.get("/")
 def root(db: Session = Depends(get_session)):
-
-
     return {"Helsslo": ""}
 
 app = socketio.ASGIApp(sio, other_asgi_app=fast_app)

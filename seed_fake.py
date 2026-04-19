@@ -18,7 +18,7 @@ HOBBIES = [
     "gardening", "dancing", "swimming", "coding", "writing",
 ]
 
-STEP_STATUSES = ["DONE"]
+STEP_STATUSES = ["COMPLETED"]
 
 def generate_indian_phone_number():
     # First digit: 6-9
@@ -85,9 +85,9 @@ def seed(n: int = 100) -> None:
             all_addition_images = [make_addition_images(i.id) for _ in range(3)]
             session.add_all(all_addition_images)
             session.commit()
-            all_friends = make_friends(i.id)
-            session.add_all(all_friends)
-            session.commit()
+            # all_friends = make_friends(i.id)
+            # session.add_all(all_friends)
+            # session.commit()
 
 
 

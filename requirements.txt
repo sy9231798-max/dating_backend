@@ -6,6 +6,7 @@ bidict==0.23.1
 click==8.3.2
 dnspython==2.8.0
 dotenv==0.9.9
+Faker==40.13.0
 fastapi==0.135.3
 gevent==26.4.0
 greenlet==3.4.0
