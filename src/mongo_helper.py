@@ -15,4 +15,3 @@ try:
 except Exception as e:
     print(e)
 
-message_collection.insert_one({"message": "Hello World"})
