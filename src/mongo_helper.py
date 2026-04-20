@@ -4,7 +4,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from src.database import settings
 
 client = AsyncIOMotorClient(settings.MONGODB_URL,
-                            tlsCAFile=certifi.where())
+                            # tlsCAFile=certifi.where()
+                            )
 database = client.chat_app  # Database Name
 message_collection = database.get_collection("messages")
 

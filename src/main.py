@@ -24,9 +24,9 @@ from src.token_helper import create_token, verify_token
 fast_app = FastAPI()
 
 
-with engine.connect() as conn:
-    conn.execute(text('SET search_path TO "Dating_stomachtwo"'))
-    conn.commit()
+# with engine.connect() as conn:
+#     conn.execute(text('SET search_path TO "Dating_stomachtwo"'))
+#     conn.commit()
 
 SQLModel.metadata.create_all(engine)
 fast_app.add_middleware(
@@ -91,7 +91,6 @@ async def user_message(sid, data):
 @sio.on("call")
 async def user_calls(sid, data):
 
-    print(f"Call received {data}")
     if data is not None:
         await chatHandler.handle_call(data,db = next(get_session()))
 

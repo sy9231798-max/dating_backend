@@ -149,6 +149,7 @@ class ChatHandler:
                 return
             case "answerCall":
                 caller_id = data["callerId"]
+                print(f"Answer Call By {caller_id}")
                 await self.sio.emit("callAnswered", {
                     "sdpAnswer": data["sdpAnswer"],
                 },
@@ -156,10 +157,10 @@ class ChatHandler:
                 return
             case "iceCandidate":
                 ice_candidate = data["iceCandidate"]
-                # await self.sio.emit("iceCandidate", {
-                #     "from": "sender",
-                #     "iceCandidate": ice_candidate,
-                # }, to=self.connected_users[receiver])
+                receiver = data["receiverId"]
+                await self.sio.emit("iceCandidate", {
+                    "iceCandidate": ice_candidate,
+                }, to=self.connected_users[receiver])
 
     async def user_disconnected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
