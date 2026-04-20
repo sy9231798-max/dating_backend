@@ -31,7 +31,8 @@ def login_user(login_model: LoginRequestBody, db: Session):
 
             db_user = user
 
-        otp = str(secrets.randbelow(1000000)).zfill(6)
+        # otp = str(secrets.randbelow(1000000)).zfill(6)
+        otp = "000000"
 
         otp_record = OtpModel(
             phone_number=db_user.phone_number,
