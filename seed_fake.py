@@ -97,4 +97,4 @@ def seed(n: int = 100) -> None:
 
 
 if __name__ == "__main__":
-    seed(1000)
+    seed(10)

@@ -5,7 +5,7 @@ import socketio
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.openapi.utils import get_openapi
 from motor.motor_asyncio import AsyncIOMotorClient
-from sqlalchemy import text
+from sqlalchemy import text, event
 from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
@@ -24,9 +24,11 @@ from src.token_helper import create_token, verify_token
 fast_app = FastAPI()
 
 
-with engine.connect() as conn:
-    conn.execute(text('SET search_path TO "Dating_stomachtwo"'))
-    conn.commit()
+@event.listens_for(engine, "connect", insert=True)
+def set_search_path(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("SET SESSION search_path='app_schema, public'")
+    cursor.close()
 
 SQLModel.metadata.create_all(engine)
 fast_app.add_middleware(
