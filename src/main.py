@@ -24,9 +24,9 @@ from src.token_helper import create_token, verify_token
 fast_app = FastAPI()
 
 
-# with engine.connect() as conn:
-#     conn.execute(text('SET search_path TO "Dating_stomachtwo"'))
-#     conn.commit()
+with engine.connect() as conn:
+    conn.execute(text('SET search_path TO "Dating_stomachtwo"'))
+    conn.commit()
 
 SQLModel.metadata.create_all(engine)
 fast_app.add_middleware(
