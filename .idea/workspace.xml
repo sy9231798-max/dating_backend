@@ -5,22 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e23dc819-85e3-4c7c-b528-b04b71c03aad" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/agent/model_wrapper.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/agent/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/agent/service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/agent/views.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/pagination_model.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/super_admin/model_wrapper.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/super_admin/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/super_admin/service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/super_admin/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/DatingBackend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/DatingBackend.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/api_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/auth/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/auth/service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/auth/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/auth/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/token_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/token_helper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agent/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agent/models.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,6 +21,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -43,31 +29,15 @@
     &quot;assignee&quot;: &quot;KaranGiri121&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/KaranGiri121/dating-backend.git",
-    "accountId": "6201be57-7561-4092-8dcd-d29d51df42c3"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/KaranGiri121/dating-backend.git&quot;,
+    &quot;accountId&quot;: &quot;6201be57-7561-4092-8dcd-d29d51df42c3&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
-    <McpServerCommand sourceId="UserConfigurationSource">
-      <option name="allowedToolsNames" />
-      <option name="enabled" value="true" />
-      <option name="name" value="" />
-      <option name="programPath" value="" />
-      <option name="arguments" value="" />
-      <option name="workingDirectory" value="" />
-      <envs />
-    </McpServerCommand>
-    <McpServerCommand sourceId="UserConfigurationSource">
-      <option name="allowedToolsNames" />
-      <option name="enabled" value="true" />
-      <option name="name" value="" />
-      <option name="programPath" value="" />
-      <option name="arguments" value="" />
-      <option name="workingDirectory" value="" />
-      <envs />
-    </McpServerCommand>
+    <commands />
+    <urls />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0

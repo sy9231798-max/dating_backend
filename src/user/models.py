@@ -55,6 +55,7 @@ class UserAdditionPicture(SQLModel, table=True):
     image_path: str = Field(nullable=False)
     user_id: Optional[int] = Field(foreign_key="user.id", nullable=False)
     user: Optional["UserModel"] = Relationship(back_populates="addition_images")
+
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
