@@ -5,8 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e23dc819-85e3-4c7c-b528-b04b71c03aad" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/agent/model_wrapper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/agent/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/agent/service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/agent/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/pagination_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/super_admin/model_wrapper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/super_admin/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/super_admin/service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/super_admin/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/DatingBackend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/DatingBackend.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/mongo_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mongo_helper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/api_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/auth/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/auth/service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/auth/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/auth/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/token_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/token_helper.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,15 +43,31 @@
     &quot;assignee&quot;: &quot;KaranGiri121&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/KaranGiri121/dating-backend.git&quot;,
-    &quot;accountId&quot;: &quot;c16cc0d8-a517-44ce-8fc6-c9c929ddee98&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/KaranGiri121/dating-backend.git",
+    "accountId": "6201be57-7561-4092-8dcd-d29d51df42c3"
   }
-}</component>
+}]]></component>
   <component name="McpProjectServerCommands">
-    <commands />
-    <urls />
+    <McpServerCommand sourceId="UserConfigurationSource">
+      <option name="allowedToolsNames" />
+      <option name="enabled" value="true" />
+      <option name="name" value="" />
+      <option name="programPath" value="" />
+      <option name="arguments" value="" />
+      <option name="workingDirectory" value="" />
+      <envs />
+    </McpServerCommand>
+    <McpServerCommand sourceId="UserConfigurationSource">
+      <option name="allowedToolsNames" />
+      <option name="enabled" value="true" />
+      <option name="name" value="" />
+      <option name="programPath" value="" />
+      <option name="arguments" value="" />
+      <option name="workingDirectory" value="" />
+      <envs />
+    </McpServerCommand>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0
@@ -57,13 +87,19 @@
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/anantkaal/PycharmProjects/testing-backend/src&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-2653e85de345-6d6dccd035ac-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.31033.139" />
+        <option value="bundled-python-sdk-0978a7220b69-9867c7d4c0a4-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.28294.336" />
       </set>
     </attachedChunks>
   </component>

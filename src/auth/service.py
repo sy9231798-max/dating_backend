@@ -248,3 +248,34 @@ def store_client_profile_detail(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to Login: {str(e)}"
         )
+
+
+
+def agent_code_verification(
+        agent_code: str,
+        token: str,
+        db: Session):
+    try:
+        token_data = verify_token(token)
+        user_id = token_data.get("user_id")
+
+        db_user: Optional[UserModel] = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # db_agent : Optional[]
+        return {
+            "status": True,
+            "message": "Profile Detail Uploaded"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to Login: {str(e)}"
+        )

@@ -6,11 +6,10 @@ from starlette import status
 
 from src.auth.model_wrapper import LoginRequestBody, LoginResponseWrapper, ClientProfileRequestBody
 from src.auth.service import login_user, store_client_profile_image, otp_verification, otp_resent, \
-    store_client_profile_video, store_client_profile_detail
+    store_client_profile_video, store_client_profile_detail, agent_code_verification
 from src.database import get_session
 
 router = APIRouter()
-
 
 
 @router.post("/login")
@@ -107,6 +106,27 @@ async def upload_client_profile_detail(
             user_data=user_data,
             token=user_token,
             db=db
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to Login: {str(e)}"
+        )
+
+
+@router.post("/verify-agent")
+async def verify_agent(
+        agent_code: str = Body(...),
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session)
+):
+    try:
+        return agent_code_verification(
+            agent_code=agent_code,
+            db=db,
+            token=user_token
         )
     except HTTPException:
         raise
