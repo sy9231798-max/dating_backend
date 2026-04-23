@@ -50,7 +50,7 @@ fast_app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 fast_app.include_router(api_router, prefix="/v1")
 chatHandler = ChatHandler(sio,message_collection)
 
-
+print(settings.MONGODB_URL)
 
 @sio.event
 async def connect(sid, environ,auth):

@@ -4,7 +4,7 @@ from typing import List, Optional, Mapping, Any
 from pydantic import BaseModel, Field
 from sqlalchemy.sql.functions import user
 
-from src.user.models import Gender, ConversationTable, UserModel, UserAdditionPicture
+from src.user.models import Gender, ConversationTable, UserModel, UserAdditionPicture, CallHistoryTable
 
 
 class UserDataResponse(BaseModel):
@@ -20,7 +20,7 @@ class UserDataResponse(BaseModel):
     state: str
     city: str
     lvl: int
-    score:int
+    score: int
     created_at: datetime
     addition_images: List[UserAdditionPicture]
     is_active: bool
@@ -53,6 +53,22 @@ class ConversationDataResponse(BaseModel):
             user_id=conversation.user_b.id if is_a else conversation.user_a.id,
             user=ConversationUserData.get_user(conversation.user_b if is_a else conversation.user_a),
             unread_count=conversation.unread_count_a if is_a else conversation.unread_count_b
+        )
+
+
+class CallDataResponse(BaseModel):
+    id: int
+    caller_id: int
+    user: ConversationUserData
+    duration: int
+    created_at: datetime
+
+    @classmethod
+    def call_history(cls, user_id: int, call_history: CallHistoryTable) -> CallDataResponse:
+        is_me = call_history.caller == user_id
+        return cls(
+            **call_history.model_dump(),
+            user=ConversationUserData.get_user(call_history.receiver if is_me else call_history.caller),
         )
 
 

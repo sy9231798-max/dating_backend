@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e23dc819-85e3-4c7c-b528-b04b71c03aad" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/agent/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agent/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/model_wrapper.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/model_wrapper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/user/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/user/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,12 +34,12 @@
     &quot;assignee&quot;: &quot;KaranGiri121&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/KaranGiri121/dating-backend.git&quot;,
-    &quot;accountId&quot;: &quot;6201be57-7561-4092-8dcd-d29d51df42c3&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/KaranGiri121/dating-backend.git",
+    "accountId": "c16cc0d8-a517-44ce-8fc6-c9c929ddee98"
   }
-}</component>
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -69,7 +74,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-0978a7220b69-9867c7d4c0a4-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.28294.336" />
+        <option value="bundled-python-sdk-2653e85de345-6d6dccd035ac-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.31033.139" />
       </set>
     </attachedChunks>
   </component>

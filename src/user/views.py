@@ -10,7 +10,7 @@ from src.mongo_helper import message_collection
 from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse
 from src.user.models import FriendTable, UserModel
 from src.user.service import (get_my_information, fetch_explore, fetch_profile_status, fetch_conversation,
-                              fetch_all_message, sent_request, friend_request_action)
+                              fetch_all_message, sent_request, friend_request_action, fetch_call_history)
 
 router = APIRouter()
 
@@ -96,6 +96,20 @@ async def get_conversation_data(
             detail=f"Failed to fetch message: {str(e)}"
         )
 
+@router.get("/call-history")
+async def get_call_history(
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return fetch_call_history(db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch conversation: {str(e)}"
+        )
 
 @router.get("/send-request")
 async def send_request(

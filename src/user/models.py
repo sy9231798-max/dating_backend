@@ -33,10 +33,6 @@ class UserModel(UserBaseModel, table=True):
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
-    addition_images: List["UserAdditionPicture"] = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
     step_1_error: Optional[str] = Field(default="PENDING")
     step_2_error: Optional[str] = Field(default="PENDING")
     step_3_error: Optional[str] = Field(default="PENDING")
@@ -47,6 +43,19 @@ class UserModel(UserBaseModel, table=True):
         sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     )
     is_active: bool = Field(default=False)
+    addition_images: List["UserAdditionPicture"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+
+    call_made: List["CallHistoryTable"] = Relationship(
+        back_populates="caller",
+        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.caller_id]"}
+    )
+    call_received: List["CallHistoryTable"] = Relationship(
+        back_populates="receiver",
+        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.receiver_id]"}
+    )
 
 
 class UserAdditionPicture(SQLModel, table=True):
@@ -103,4 +112,28 @@ class FriendRequestTable(SQLModel, table=True):
     receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+
+
+class CallHistoryTable(SQLModel, table=True):
+    __tablename__ = "call_history"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    caller_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+
+    receiver: Optional["UserModel"] = Relationship(
+        back_populates="call_received",
+        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.receiver_id]"}
+    )
+    caller : Optional["UserModel"] = Relationship(
+        back_populates="call_made",
+        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.caller_id]"}
+    )
+
+    duration: int = Field(default=0)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     )

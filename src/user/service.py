@@ -3,13 +3,14 @@ from typing import Optional
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorCollection
 from sqlalchemy import asc
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select, or_, desc
 from starlette import status
 
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.token_helper import verify_token, create_token
-from src.user.model_wrapper import ConversationDataResponse, MessageResponse
-from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable
+from src.user.model_wrapper import ConversationDataResponse, MessageResponse, CallDataResponse
+from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable, CallHistoryTable
 
 
 def get_my_information(
@@ -91,7 +92,9 @@ def fetch_explore(
     try:
         verify_token(token)
 
-        statement = select(UserModel).where(UserModel.account_type == AccountType.AGENT).order_by(desc(UserModel.score))
+        statement = (select(UserModel).where(UserModel.account_type == AccountType.AGENT).options(
+            selectinload(UserModel.addition_images)
+        ).order_by(desc(UserModel.score)))
         users = db.exec(statement).all()
         return users
     except HTTPException:
@@ -118,6 +121,36 @@ def fetch_conversation(
         ).order_by(desc(ConversationTable.created_at))
         all_conversation = db.exec(statement).all()
         return [ConversationDataResponse.conversation(user_id=user_id, conversation=i) for i in all_conversation]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to Login: {str(e)}"
+        )
+
+
+def fetch_call_history(
+        token: str,
+        db: Session
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+        statement = (select(CallHistoryTable).where(
+            or_(
+                CallHistoryTable.caller_id == user_id,
+                CallHistoryTable.receiver_id == user_id
+            )
+        ).options(
+            selectinload(CallHistoryTable.caller),
+            selectinload(CallHistoryTable.receiver)
+        ).
+                     order_by(desc(CallHistoryTable.created_at)))
+        all_call_history = db.exec(statement).all()
+        return [CallDataResponse.call_history(user_id=user_id,call_history=i) for i in all_call_history]
+        # return [ConversationDataResponse.conversation(user_id=user_id, conversation=i) for i in all_conversation]
+        return all_call_history
     except HTTPException:
         raise
     except Exception as e:
@@ -181,7 +214,6 @@ def sent_request(
         payload = verify_token(token)
         user_id = payload["user_id"]
 
-
         db_user: Optional[UserModel] = db.exec(select(UserModel.id == user_id)).first()
         if db_user is None:
             raise HTTPException(
@@ -225,13 +257,13 @@ def friend_request_action(
         payload = verify_token(token)
         user_id = payload["user_id"]
 
-        db_request: Optional[FriendRequestTable] = db.exec(select(FriendRequestTable).where(FriendRequestTable.id == request_id)).first()
+        db_request: Optional[FriendRequestTable] = db.exec(
+            select(FriendRequestTable).where(FriendRequestTable.id == request_id)).first()
         if db_request is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Friend request might be cancel by sender"
             )
-
 
         if db_request.receiver_id != user_id:
             raise HTTPException(
@@ -248,7 +280,6 @@ def friend_request_action(
                 friend_id=db_request.sender_id,
                 user_id=db_request.receiver_id,
             ))
-
 
         db.delete(db_request)
         db.commit()
