@@ -5,9 +5,11 @@ from sqlmodel import Session
 from starlette import status
 
 from src.database import get_session
+from src.pagination_model import PaginatedResponse
 from src.super_admin.model_wrapper import AdminDashboardResponse
 from src.super_admin.service import login_user, fetch_dashboard, fetch_all_user
 from src.user.enums import AccountType
+from src.user.model_wrapper import UserDataResponse
 
 router = APIRouter()
 
@@ -45,7 +47,7 @@ async def get_dashboard(
         )
 
 
-@router.get("/users")
+@router.get("/users",response_model=PaginatedResponse[UserDataResponse])
 async def get_all_users(
         db: Session = Depends(get_session),
         page: int = Query(1, ge=1),

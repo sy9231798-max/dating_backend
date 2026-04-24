@@ -11,6 +11,7 @@ class UserDataResponse(BaseModel):
     id: int
     first_name: str
     last_name: str
+    phone_number: str
     email: str
     profile_picture: str
     video_picture: str
@@ -20,10 +21,18 @@ class UserDataResponse(BaseModel):
     state: str
     city: str
     lvl: int
+    is_pending: Optional[bool]
     score: int
     created_at: datetime
     addition_images: List[UserAdditionPicture]
     is_active: bool
+
+    @classmethod
+    def with_is_pending_status(cls, user: UserModel) -> UserDataResponse:
+        return cls(**user.dict(),
+                   addition_images=user.addition_images,
+                   is_pending=user.step_1_error == "COMPLETED" and user.step_2_error == "COMPLETED" and user.step_3_error == "COMPLETED"
+                   )
 
 
 class ConversationUserData(BaseModel):
