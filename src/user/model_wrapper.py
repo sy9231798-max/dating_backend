@@ -29,9 +29,45 @@ class UserDataResponse(BaseModel):
 
     @classmethod
     def with_is_pending_status(cls, user: UserModel) -> UserDataResponse:
+        is_pending = user.step_1_error == "COMPLETED" and user.step_2_error == "COMPLETED" and user.step_3_error == "COMPLETED"
         return cls(**user.dict(),
                    addition_images=user.addition_images,
-                   is_pending=user.step_1_error == "COMPLETED" and user.step_2_error == "COMPLETED" and user.step_3_error == "COMPLETED"
+                   is_pending=is_pending
+                   )
+
+
+class UserDetailResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    phone_number: str
+    email: str
+    profile_picture: str
+    video_picture: str
+    dob: str
+    gender: Gender
+    hobby: List[str]
+    state: str
+    city: str
+    lvl: int
+    is_pending: Optional[bool]
+    score: int
+    created_at: datetime
+    addition_images: List[UserAdditionPicture]
+    is_active: bool
+    step_1_error: Optional[str]
+    step_2_error: Optional[str]
+    step_3_error: Optional[str]
+
+    @classmethod
+    def with_is_pending_status(cls, user: UserModel) -> UserDetailResponse:
+
+        is_completed = user.step_1_error == "COMPLETED" and user.step_2_error == "COMPLETED" and user.step_3_error == "COMPLETED"
+
+
+        return cls(**user.dict(),
+                   addition_images=user.addition_images,
+                   is_pending=not is_completed
                    )
 
 
