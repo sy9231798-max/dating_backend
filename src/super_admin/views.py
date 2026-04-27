@@ -4,12 +4,14 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Header, Query, Uplo
 from sqlmodel import Session
 from starlette import status
 
+from src.agent.models import AgentModel
 from src.database import get_session
 from src.pagination_model import PaginatedResponse
 from src.super_admin.model_wrapper import AdminDashboardResponse
 from src.super_admin.models import GiftModel
 from src.super_admin.service import login_user, fetch_dashboard, fetch_all_user, insert_gift, fetch_all_gifts, \
-    update_gift, remove_gift, approve_agent_profile, not_approve_agent_profile, insert_agency
+    update_gift, remove_gift, approve_agent_profile, not_approve_agent_profile, insert_agency, fetch_all_agency, \
+    remove_agency
 from src.user.enums import AccountType
 from src.user.model_wrapper import UserDataResponse, UserDetailResponse
 
@@ -110,7 +112,24 @@ async def not_approve_agent(
             detail=f"Failed to not approve user: {str(e)}"
         )
 
-@router.post("/add-agency")
+
+@router.get("/get-all-agency", response_model=List[AgentModel])
+async def get_all_agency(
+        db: Session = Depends(get_session),
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+):
+    try:
+        return fetch_all_agency(db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get all agency: {str(e)}"
+        )
+
+
+@router.post("/add-agency", response_model=AgentModel)
 async def add_agency(
         db: Session = Depends(get_session),
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
@@ -119,13 +138,31 @@ async def add_agency(
         name: str = Body(...),
 ):
     try:
-        return insert_agency(db=db, token=user_token,phone=phone,name=name,email=email)
+        return insert_agency(db=db, token=user_token, phone=phone, name=name, email=email)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add agency: {str(e)}"
+        )
+
+
+@router.delete("/delete-agency/{agency_id}")
+async def delete_agency(
+        agency_id: int,
+        db: Session = Depends(get_session),
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+
+):
+    try:
+        return remove_agency(db=db, token=user_token, id=agency_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete agency: {str(e)}"
         )
 
 

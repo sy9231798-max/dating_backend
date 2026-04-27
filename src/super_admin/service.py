@@ -225,6 +225,34 @@ def not_approve_agent_profile(
         )
 
 
+def fetch_all_agency(
+        token: str,
+        db: Session,
+):
+    try:
+        # payload = verify_token(token)
+        # role = payload["role"]
+        role = "admin"
+        if role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials"
+            )
+
+        all_agency = db.exec(select(AgentModel)).all()
+        return all_agency
+
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch all agency: {str(e)}"
+        )
+
+
 def insert_agency(
         email: str,
         name: str,
@@ -243,6 +271,7 @@ def insert_agency(
             )
 
         is_exist = db.exec(select(AgentModel).where(AgentModel.agent_phone == phone)).first()
+        print(f"is Exist {is_exist}")
         if is_exist:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -277,6 +306,45 @@ def insert_agency(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add agency: {str(e)}"
+        )
+
+
+def remove_agency(
+        id: int,
+        token: str,
+        db: Session,
+):
+    try:
+        # payload = verify_token(token)
+        # role = payload["role"]
+        role = "admin"
+        if role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials"
+            )
+
+        db_agency = db.exec(select(AgentModel).where(AgentModel.id == id)).first()
+        if not db_agency:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Agency {id} not found"
+            )
+
+        db.delete(db_agency)
+        db.commit()
+        return {
+            "status": True
+        }
+
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete agency: {str(e)}"
         )
 
 

@@ -26,11 +26,11 @@ fast_app = FastAPI()
 def startup():
     SQLModel.metadata.create_all(engine)
 
-@event.listens_for(engine, "connect", insert=True)
-def set_search_path(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("SET SESSION search_path='app_schema, public'")
-    cursor.close()
+# @event.listens_for(engine, "connect", insert=True)
+# def set_search_path(dbapi_connection, connection_record):
+#     cursor = dbapi_connection.cursor()
+#     cursor.execute("SET SESSION search_path='app_schema, public'")
+#     cursor.close()
 fast_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
