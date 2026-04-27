@@ -9,7 +9,7 @@ from starlette import status
 from src.agent.models import AgentModel
 from src.image_upload_helper import upload_image
 from src.pagination_model import PaginatedResponse, PaginationMeta
-from src.password_handler import pwd_context
+from src.password_handler import pwd_context, generate_code
 from src.super_admin.model_wrapper import AdminDashboardResponse
 from src.super_admin.models import AdminModel, GiftModel
 from src.token_helper import create_token, create_admin_token, verify_token
@@ -222,6 +222,61 @@ def not_approve_agent_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to not approve user: {str(e)}"
+        )
+
+
+def insert_agency(
+        email: str,
+        name: str,
+        phone: str,
+        token: str,
+        db: Session,
+):
+    try:
+        # payload = verify_token(token)
+        # role = payload["role"]
+        role = "admin"
+        if role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials"
+            )
+
+        is_exist = db.exec(select(AgentModel).where(AgentModel.agent_phone == phone)).first()
+        if is_exist:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Phone number {phone} already exists"
+            )
+
+        db_agency = AgentModel()
+
+        db_agency.agent_email = email
+        db_agency.agent_phone = phone
+        db_agency.agent_name = name
+
+        while True:
+            agent_code = generate_code()
+            is_exist = db.exec(select(AgentModel).where(AgentModel.agent_code == agent_code)).all()
+            if is_exist:
+                continue
+            else:
+                break
+
+        db_agency.agent_code = agent_code
+        db.add(db_agency)
+        db.commit()
+        db.refresh(db_agency)
+        return db_agency
+
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add agency: {str(e)}"
         )
 
 

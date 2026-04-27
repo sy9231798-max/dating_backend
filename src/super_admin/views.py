@@ -9,7 +9,7 @@ from src.pagination_model import PaginatedResponse
 from src.super_admin.model_wrapper import AdminDashboardResponse
 from src.super_admin.models import GiftModel
 from src.super_admin.service import login_user, fetch_dashboard, fetch_all_user, insert_gift, fetch_all_gifts, \
-    update_gift, remove_gift, approve_agent_profile, not_approve_agent_profile
+    update_gift, remove_gift, approve_agent_profile, not_approve_agent_profile, insert_agency
 from src.user.enums import AccountType
 from src.user.model_wrapper import UserDataResponse, UserDetailResponse
 
@@ -108,6 +108,24 @@ async def not_approve_agent(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to not approve user: {str(e)}"
+        )
+
+@router.post("/add-agency")
+async def add_agency(
+        db: Session = Depends(get_session),
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        email: str = Body(...),
+        phone: str = Body(...),
+        name: str = Body(...),
+):
+    try:
+        return insert_agency(db=db, token=user_token,phone=phone,name=name,email=email)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add agency: {str(e)}"
         )
 
 

@@ -9,7 +9,8 @@ class AgentModel(SQLModel, table=True):
     __tablename__ = "agent"
     id: Optional[int] = Field(default=None, primary_key=True)
     agent_name: str = Field(default="")
-    agent_email: str = Field(nullable=False, index=True)
+    agent_email: str = Field(nullable=False,)
+    agent_phone: str = Field(nullable=False, index=True,unique=True)
     agent_code: str = Field(nullable=False, index=True)
     referrals: List["AgentReferrals"] = Relationship(back_populates="agent")
     created_at: datetime = Field(

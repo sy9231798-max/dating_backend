@@ -34,9 +34,8 @@ def make_user(fake: Faker) -> UserModel:
         first_name=fake.first_name_male() if gender == Gender.MALE else fake.first_name_female(),
         last_name=fake.last_name(),
         email=fake.unique.email(),
-
         phone_number=generate_indian_phone_number(),
-        profile_picture=f"uploads/20260410_100125_488177.png",
+        profile_picture=f"uploads/20260410_123122_935700.png",
         video_picture=f"uploads/20260410_123626_880724.mp4",
         dob=dob.isoformat(),
         gender=gender,
@@ -49,13 +48,13 @@ def make_user(fake: Faker) -> UserModel:
         step_2_error=random.choice(STEP_STATUSES),
         step_3_error=random.choice(STEP_STATUSES),
         account_type=AccountType.AGENT,
-        is_active=random.choice([True, False]),
+        is_active=random.choice([False]),
     )
 
 
 def make_addition_images(userId: int) -> UserAdditionPicture:
     return UserAdditionPicture(
-        image_path="uploads/20260410_100125_489400.png" if userId % 2 == 0 else "uploads/20260410_123122_937257.png",
+        image_path="uploads/20260410_100125_488177.png" if userId % 2 == 0 else "uploads/20260410_123122_937257.png",
         user_id=userId
     )
 
@@ -96,5 +95,7 @@ def seed(n: int = 100) -> None:
     print(f"✅  Inserted {n} fake users into '{DATABASE_URL}'")
 
 
+from src.password_handler import pwd_context
 if __name__ == "__main__":
-    seed(10)
+    # seed(100)
+    print(pwd_context.hash("Admin@121"))
