@@ -21,7 +21,7 @@ class UserDataResponse(BaseModel):
     state: str
     city: str
     lvl: int
-    is_pending: Optional[bool]
+    is_pending: Optional[bool] = False
     score: int
     created_at: datetime
     addition_images: List[UserAdditionPicture]

@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session
+
 from src.config import get_settings
-from sqlalchemy import event
 
 settings = get_settings()
 

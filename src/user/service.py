@@ -1,5 +1,6 @@
 from typing import Optional
 
+from engineio import payload
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorCollection
 from sqlalchemy import asc, and_
@@ -91,23 +92,25 @@ def fetch_explore(
         db: Session
 ):
     try:
-        payload = verify_token(token)
-        user_id = payload["user_id"]
-        b1 = aliased(BlockedUser)
-        b2 = aliased(BlockedUser)
-        statement = (select(UserModel)
-                     .outerjoin(b1, and_(
-            b1.blocked_id == UserModel.id,
-            b1.blocker_id == user_id
-        ))
-                     .outerjoin(b2, and_(
-            b2.blocker_id == UserModel.id,
-            b2.blocked_id == user_id
-        ))
-                     .where(UserModel.account_type == AccountType.AGENT)
-                     .options(selectinload(UserModel.addition_images)).
-                     order_by(desc(UserModel.score)))
-        users = db.exec(statement).all()
+        # payload = verify_token(token)
+        # user_id = payload["user_id"]
+        user_id = 1
+        # b1 = aliased(BlockedUser)
+        # b2 = aliased(BlockedUser)
+        # statement = (select(UserModel)
+                     #              .outerjoin(b1, and_(
+                     #     b1.blocked_id == UserModel.id,
+                     #     b1.blocker_id == user_id
+                     # ))
+                     #              .outerjoin(b2, and_(
+                     #     b2.blocker_id == UserModel.id,
+                     #     b2.blocked_id == user_id
+                     # ))
+                     #              .where(UserModel.account_type == AccountType.AGENT)
+                     # .options(selectinload(UserModel.addition_images))
+                     # .order_by(desc(UserModel.score)))
+        # users = db.exec(statement).all()
+        users = db.query(UserModel).options(selectinload(UserModel.addition_images)).order_by(desc(UserModel.score)).all()
         return users
     except HTTPException:
         raise
