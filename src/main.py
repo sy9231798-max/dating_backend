@@ -20,17 +20,20 @@ from jwt.exceptions import PyJWTError
 
 from src.mongo_helper import message_collection
 from src.token_helper import create_token, verify_token
-
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from PIL import Image
+import os
 fast_app = FastAPI()
 @fast_app.on_event("startup")
 def startup():
     SQLModel.metadata.create_all(engine)
 
-@event.listens_for(engine, "connect", insert=True)
-def set_search_path(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("SET SESSION search_path='app_schema, public'")
-    cursor.close()
+# @event.listens_for(engine, "connect", insert=True)
+# def set_search_path(dbapi_connection, connection_record):
+#     cursor = dbapi_connection.cursor()
+#     cursor.execute("SET SESSION search_path='app_schema, public'")
+#     cursor.close()
 fast_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -68,6 +71,51 @@ async def connect(sid, environ,auth):
         print(f"Connected {sid} {payload}")
     except PyJWTError:
         return False
+
+
+BASE_DIR = "uploads"
+CACHE_DIR = "cache"
+
+os.makedirs(BASE_DIR, exist_ok=True)
+os.makedirs(CACHE_DIR, exist_ok=True)
+SIZES = {
+    "small": (150, 150),
+    "medium": (600, 600),
+    "large": (1200, 1200),
+}
+
+
+def get_paths(image_name: str, size: str):
+    original_path = os.path.join(BASE_DIR, image_name)
+    cached_path = os.path.join(CACHE_DIR, f"{size}_{image_name}")
+    return original_path, cached_path
+
+@fast_app.get("/image/{image_name}")
+def serve_image(image_name: str, size: str = "medium"):
+    if size not in SIZES and size != "original":
+        raise HTTPException(status_code=400, detail="Invalid size")
+    original_path, cached_path = get_paths(image_name, size)
+
+    print(original_path, cached_path)
+    if not os.path.exists(original_path):
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # Serve original directly
+    if size == "original":
+        return FileResponse(original_path)
+
+    # If cached exists → return it
+    if os.path.exists(cached_path):
+        return FileResponse(cached_path)
+
+    # Otherwise generate it
+    image = Image.open(original_path)
+    image = image.convert("RGB")
+
+    image.thumbnail(SIZES[size])
+    image.save(cached_path, optimize=True, quality=85)
+
+    return FileResponse(cached_path)
 
 
 @sio.on("agent_connect")

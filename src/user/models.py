@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, func, JSON
+from sqlalchemy import Column, DateTime, func, JSON, UniqueConstraint, ForeignKey
 from sqlmodel import Field, SQLModel, Relationship
 
 from enum import Enum
@@ -125,12 +125,79 @@ class CallHistoryTable(SQLModel, table=True):
         back_populates="call_received",
         sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.receiver_id]"}
     )
-    caller : Optional["UserModel"] = Relationship(
+    caller: Optional["UserModel"] = Relationship(
         back_populates="call_made",
         sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.caller_id]"}
     )
 
     duration: int = Field(default=0)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )
+
+
+class BlockedUser(SQLModel, table=True):
+    __tablename__ = "blocked_users"
+
+    id: int = Field(primary_key=True, default=None)
+    blocker_id: int = Field(
+        sa_column=Column(
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True
+        )
+    )
+    blocked_id: int = Field(
+        sa_column=Column(
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True
+        )
+    )
+    reason: str = Field(default="", nullable=False)
+    blocked_user: Optional["UserModel"] = Relationship(
+        sa_relationship_kwargs={
+            "primaryjoin": "BlockedUser.blocked_id == UserModel.id"
+        }
+    )
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )
+    __table_args__ = (
+        UniqueConstraint("blocker_id", "blocked_id", name="unique_block"),
+    )
+
+
+class ReportUser(SQLModel, table=True):
+    __tablename__ = "report_user"
+
+    id: int = Field(primary_key=True, default=None)
+    reporter_id: int = Field(
+        sa_column=Column(
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True
+        )
+    )
+    reported_id: int = Field(
+        sa_column=Column(
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True
+        )
+    )
+    reason: str = Field(default="", nullable=False)
+    reported_user: Optional["UserModel"] = Relationship(
+        sa_relationship_kwargs={
+            "primaryjoin": "BlockedUser.blocked_id == UserModel.id"
+        }
+    )
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
