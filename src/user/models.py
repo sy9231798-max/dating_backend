@@ -36,6 +36,7 @@ class UserModel(UserBaseModel, table=True):
     step_1_error: Optional[str] = Field(default="PENDING")
     step_2_error: Optional[str] = Field(default="PENDING")
     step_3_error: Optional[str] = Field(default="PENDING")
+    coins: int = Field(default=100)
     lvl: Optional[int] = Field(default=1)
     score: Optional[int] = Field(default=0)
     account_type: AccountType = Field(default=AccountType.USER)

@@ -10,6 +10,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.ai
 env/
 build/
 develop-eggs/
@@ -131,7 +132,7 @@ pip-selfcheck.json
 .idea/**/gradle.xml
 .idea/**/libraries
 
-.idea
+.idea/
 
 # Gradle and Maven with auto-import
 # When using Gradle or Maven with auto-import, you should exclude module files,
@@ -155,6 +156,7 @@ uploads/
 
 # File-based project format
 *.iws
+.DS_Store
 
 # IntelliJ
 out/

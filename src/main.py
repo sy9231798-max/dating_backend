@@ -37,7 +37,7 @@ fast_app = FastAPI()
 def startup():
     SQLModel.metadata.create_all(engine)
 
-
+#
 # @event.listens_for(engine, "connect", insert=True)
 # def set_search_path(dbapi_connection, connection_record):
 #     cursor = dbapi_connection.cursor()

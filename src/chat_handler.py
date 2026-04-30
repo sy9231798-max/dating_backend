@@ -1,6 +1,6 @@
 import datetime
 from enum import Enum
-from typing import Any, Optional, clear_overloads
+from typing import Any, Optional, clear_overloads, Type
 import json
 
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -27,6 +27,7 @@ class ChatHandler:
         self.sio = sio
         self.connected_users = {}
         self.message_collection = message_collection
+        self.roomHandler = {}
 
     async def user_connected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
@@ -132,35 +133,49 @@ class ChatHandler:
         if receiver in self.connected_users:
             await self.sio.emit(type, data)
 
-    async def handle_call(self, data: str, db: Session):
+    async def handle_call(self, sid: Any, data: str, db: Session):
         data = json.loads(data)
         call_type = data["type"]
         match call_type:
             case "makeCall":
                 receiver = data["receiverId"]
                 sender_details = data["callerDetail"]
-                await self.sio.emit("callReceived",
-                                    {
-                                        "sdpOffer": data["sdpOffer"],
-                                        "sender_details": sender_details,
-                                    },
-                                    to=self.connected_users[receiver]
-                                    )
+                session = await self.sio.get_session(sid)
+                user = session.get("user") if session else None
+                user_id = user["user_id"]
+                if receiver in self.connected_users:
+                    self.roomHandler[data["roomId"]] = user_id
+                    await self.sio.emit("callReceived",
+                                        {
+                                            "roomId": data["roomId"],
+                                            "sender_details": sender_details,
+                                        },
+                                        to=self.connected_users[receiver]
+                                        )
+
+                await self.sio.emit("makeCallACK", to=self.connected_users[user_id])
                 return
-            case "answerCall":
-                caller_id = data["callerId"]
-                print(f"Answer Call By {caller_id}")
-                await self.sio.emit("callAnswered", {
-                    "sdpAnswer": data["sdpAnswer"],
-                },
-                                    to=self.connected_users[caller_id])
+            case "registerCallDuration":
+                room_id = data["roomId"]
+                if room_id in self.roomHandler:
+                    user_id = self.roomHandler[room_id]
+                    db_user: Optional[Type[UserModel]] = db.query(UserModel).where(UserModel.id == user_id).first()
+                    if db_user is not None:
+                        db_user.coins -= 10
+                        db.commit()
+
                 return
-            case "iceCandidate":
-                ice_candidate = data["iceCandidate"]
+            case "callDrop":
                 receiver = data["receiverId"]
-                await self.sio.emit("iceCandidate", {
-                    "iceCandidate": ice_candidate,
-                }, to=self.connected_users[receiver])
+                if receiver in self.connected_users:
+                    del self.roomHandler[data["roomId"]]
+                    await self.sio.emit("callDrop",
+                                        {
+                                            "roomId": data["roomId"],
+                                        },
+                                        to=self.connected_users[receiver]
+                                        )
+                return
 
     async def user_disconnected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
