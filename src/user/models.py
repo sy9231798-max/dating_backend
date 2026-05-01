@@ -8,6 +8,7 @@ from sqlmodel import Field, SQLModel, Relationship
 from enum import Enum
 
 from src.user.enums import Gender, AccountType
+from user.enums import CallStatus
 
 
 class UserBaseModel(SQLModel):
@@ -199,6 +200,23 @@ class ReportUser(SQLModel, table=True):
     #         "primaryjoin": "BlockedUser.blocked_id == UserModel.id"
     #     }
     # )
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )
+
+
+class CallHistory(SQLModel, table=True):
+    __tablename__ = "call_history"
+
+    id: int = Field(primary_key=True, default=None)
+    caller_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    room_id: str = Field(foreign_key="user.id", nullable=False)
+    call_status: CallStatus = Field(default=CallStatus.NONE)
+    call_duration: int = Field(default=0)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )

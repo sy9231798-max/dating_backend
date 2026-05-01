@@ -5,11 +5,12 @@ import json
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 from socketio import AsyncServer
-from sqlalchemy import func
+from sqlalchemy.testing.pickleable import User
 from sqlmodel import Session, select
 
 from src.user.model_wrapper import ConversationDataResponse, MessageResponse
-from src.user.models import UserModel, ConversationTable
+from src.user.models import UserModel, ConversationTable, CallHistory
+from math import ceil
 
 
 class MessageType(str, Enum):
@@ -28,6 +29,7 @@ class ChatHandler:
         self.connected_users = {}
         self.message_collection = message_collection
         self.roomHandler = {}
+        self.roomTimeHandler = {}
 
     async def user_connected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
@@ -139,12 +141,14 @@ class ChatHandler:
         match call_type:
             case "makeCall":
                 receiver = data["receiverId"]
+                roomId = data["roomId"]
                 sender_details = data["callerDetail"]
                 session = await self.sio.get_session(sid)
                 user = session.get("user") if session else None
                 user_id = user["user_id"]
                 if receiver in self.connected_users:
-                    self.roomHandler[data["roomId"]] = user_id
+                    self.roomHandler[roomId] = (user_id, receiver)
+                    self.roomTimeHandler[roomId] = datetime.datetime.now()
                     await self.sio.emit("callReceived",
                                         {
                                             "roomId": data["roomId"],
@@ -155,27 +159,49 @@ class ChatHandler:
 
                 await self.sio.emit("makeCallACK", to=self.connected_users[user_id])
                 return
-            case "registerCallDuration":
-                room_id = data["roomId"]
-                if room_id in self.roomHandler:
-                    user_id = self.roomHandler[room_id]
-                    db_user: Optional[Type[UserModel]] = db.query(UserModel).where(UserModel.id == user_id).first()
-                    if db_user is not None:
-                        db_user.coins -= 10
-                        db.commit()
-
-                return
             case "callDrop":
                 receiver = data["receiverId"]
+                roomId = data["roomId"]
                 if receiver in self.connected_users:
-                    del self.roomHandler[data["roomId"]]
                     await self.sio.emit("callDrop",
                                         {
                                             "roomId": data["roomId"],
                                         },
                                         to=self.connected_users[receiver]
                                         )
+                self.update_call_history(db, roomId)
                 return
+            case "rejectCall":
+                room_id = data["roomId"]
+                caller_id = data["callerId"]
+                if caller_id in self.connected_users:
+                    await self.sio.emit("rejectCall", to=self.connected_users[caller_id])
+                self.update_call_history(db, room_id)
+                return
+            case "callDisconnect":
+                roomId = data["roomId"]
+                self.update_call_history(db, roomId)
+            case "balanceDeduct":
+                caller_id = data["caller_id"]
+                db_user: Optional[UserModel] = db.query(UserModel).where(UserModel.id == caller_id).first()
+                if db_user:
+                    db_user.coins -= 10
+                    db.commit()
+
+    def update_call_history(self, db: Session, room_id: str):
+        total_duration = datetime.datetime.now() - self.roomTimeHandler[room_id]
+        db_room = db.query(CallHistory).where(CallHistory.room_id == room_id).first()
+        if db_room:
+            db_room.call_duration = ceil(total_duration.total_seconds())
+            db.commit()
+        del self.roomHandler[room_id]
+        del self.roomTimeHandler[room_id]
+
+    def find_key_by_user_id(self, user_id):
+        for key, (uid, receiver) in self.roomHandler.items():
+            if uid == user_id:
+                return key
+        return None
 
     async def user_disconnected(self, sid: Any, db: Session):
         session = await self.sio.get_session(sid)
@@ -189,10 +215,25 @@ class ChatHandler:
         db_user: Optional[UserModel] = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
         if db_user is None:
             return
-
         db_user.is_active = False
         db.commit()
         if user_id in self.connected_users:
             del self.connected_users[user_id]
+
+        roomId = self.find_key_by_user_id(user_id)
+        if roomId is not None:
+            self.update_call_history(db, roomId)
+
         await self.sio.emit("user_offline", user_id)
         print(f"{user_id} is offline")
+
+    def available_for_call(self, receiver_id: int) -> tuple[bool, str]:
+
+        if receiver_id not in self.connected_users:
+            return False, "User is offline"
+
+        for key, (uid, receiver) in self.roomHandler.items():
+            if receiver == receiver_id:
+                return False, "User is busy"
+
+        return True, "Available"

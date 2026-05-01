@@ -11,6 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from strawberry import Info
 
+from src.instance_handler import init_chat_handler
 from src.api_config import api_router
 from src.chat_handler import ChatHandler
 from src.database import engine, get_session, settings
@@ -189,7 +190,7 @@ sio = socketio.AsyncServer(
 
 fast_app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 fast_app.include_router(api_router, prefix="/v1")
-chatHandler = ChatHandler(sio, message_collection)
+chatHandler = init_chat_handler(sio, message_collection)
 
 print(settings.MONGODB_URL)
 

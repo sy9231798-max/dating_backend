@@ -1,18 +1,18 @@
 from typing import Optional
 
-from engineio import payload
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorCollection
-from sqlalchemy import asc, and_
 from sqlalchemy.orm import selectinload, aliased
 from sqlmodel import Session, select, or_, desc
 from starlette import status
 
+from src.instance_handler import get_chat_handler
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.token_helper import verify_token, create_token
 from src.user.model_wrapper import ConversationDataResponse, MessageResponse, CallDataResponse
 from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable, \
-    CallHistoryTable, BlockedUser, ReportUser
+    CallHistoryTable, BlockedUser, ReportUser, CallHistory
+from src.video_sdk_helper import get_room_id
 
 
 def get_my_information(
@@ -87,6 +87,41 @@ def fetch_profile_status(
         )
 
 
+def call_availability_check(
+        token: str,
+        receiver_id: int,
+        db: Session
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        is_available = get_chat_handler().available_for_call(receiver_id)
+        if not is_available[0]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=is_available[1]
+            )
+
+        roomId = get_room_id()
+        call_history = CallHistory()
+        call_history.room_id = roomId
+        call_history.caller_id = user_id
+        call_history.receiver_id = receiver_id
+        db.add(call_history)
+        db.commit()
+        return {
+            "roomId": roomId,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check call availability: {str(e)}"
+        )
+
+
 def fetch_explore(
         token: str,
         db: Session
@@ -98,19 +133,20 @@ def fetch_explore(
         # b1 = aliased(BlockedUser)
         # b2 = aliased(BlockedUser)
         # statement = (select(UserModel)
-                     #              .outerjoin(b1, and_(
-                     #     b1.blocked_id == UserModel.id,
-                     #     b1.blocker_id == user_id
-                     # ))
-                     #              .outerjoin(b2, and_(
-                     #     b2.blocker_id == UserModel.id,
-                     #     b2.blocked_id == user_id
-                     # ))
-                     #              .where(UserModel.account_type == AccountType.AGENT)
-                     # .options(selectinload(UserModel.addition_images))
-                     # .order_by(desc(UserModel.score)))
+        #              .outerjoin(b1, and_(
+        #     b1.blocked_id == UserModel.id,
+        #     b1.blocker_id == user_id
+        # ))
+        #              .outerjoin(b2, and_(
+        #     b2.blocker_id == UserModel.id,
+        #     b2.blocked_id == user_id
+        # ))
+        #              .where(UserModel.account_type == AccountType.AGENT)
+        # .options(selectinload(UserModel.addition_images))
+        # .order_by(desc(UserModel.score)))
         # users = db.exec(statement).all()
-        users = db.query(UserModel).options(selectinload(UserModel.addition_images)).order_by(desc(UserModel.score)).all()
+        users = db.query(UserModel).options(selectinload(UserModel.addition_images)).order_by(
+            desc(UserModel.score)).all()
         return users
     except HTTPException:
         raise

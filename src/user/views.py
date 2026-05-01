@@ -11,7 +11,7 @@ from src.mongo_helper import message_collection
 from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse
 from src.user.service import (get_my_information, fetch_explore, fetch_profile_status, fetch_conversation,
                               fetch_all_message, sent_request, friend_request_action, fetch_call_history, blocked_user,
-                              unblocked_user, report_user)
+                              unblocked_user, report_user, call_availability_check)
 
 router = APIRouter()
 
@@ -95,6 +95,27 @@ async def get_conversation_data(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch message: {str(e)}"
+        )
+
+
+@router.get("/check-call/{receiver_id}")
+def check_call_availability(
+        receiver_id: int,
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return call_availability_check(
+            token=user_token,
+            db=db,
+            receiver_id=receiver_id
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to call availability check: {str(e)}"
         )
 
 
