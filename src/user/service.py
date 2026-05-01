@@ -11,7 +11,7 @@ from src.auth.model_wrapper import LoginResponseWrapper
 from src.token_helper import verify_token, create_token
 from src.user.model_wrapper import ConversationDataResponse, MessageResponse, CallDataResponse
 from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable, \
-    CallHistoryTable, BlockedUser, ReportUser, CallHistory
+    CallHistory, BlockedUser, ReportUser, CallHistory
 from src.video_sdk_helper import get_room_id
 
 
@@ -188,16 +188,16 @@ def fetch_call_history(
     try:
         payload = verify_token(token)
         user_id = payload["user_id"]
-        statement = (select(CallHistoryTable).where(
+        statement = (select(CallHistory).where(
             or_(
-                CallHistoryTable.caller_id == user_id,
-                CallHistoryTable.receiver_id == user_id
+                CallHistory.caller_id == user_id,
+                CallHistory.receiver_id == user_id
             )
         ).options(
-            selectinload(CallHistoryTable.caller),
-            selectinload(CallHistoryTable.receiver)
+            selectinload(CallHistory.caller),
+            selectinload(CallHistory.receiver)
         ).
-                     order_by(desc(CallHistoryTable.created_at)))
+                     order_by(desc(CallHistory.created_at)))
         all_call_history = db.exec(statement).all()
         return [CallDataResponse.call_history(user_id=user_id, call_history=i) for i in all_call_history]
         # return [ConversationDataResponse.conversation(user_id=user_id, conversation=i) for i in all_conversation]

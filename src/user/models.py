@@ -7,8 +7,8 @@ from sqlmodel import Field, SQLModel, Relationship
 
 from enum import Enum
 
-from src.user.enums import Gender, AccountType
-from user.enums import CallStatus
+from src.user.enums import Gender, AccountType,CallStatus
+
 
 
 class UserBaseModel(SQLModel):
@@ -50,13 +50,13 @@ class UserModel(UserBaseModel, table=True):
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
 
-    call_made: List["CallHistoryTable"] = Relationship(
+    call_made: List["CallHistory"] = Relationship(
         back_populates="caller",
-        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.caller_id]"}
+        sa_relationship_kwargs={"foreign_keys": "[CallHistory.caller_id]"}
     )
-    call_received: List["CallHistoryTable"] = Relationship(
+    call_received: List["CallHistory"] = Relationship(
         back_populates="receiver",
-        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.receiver_id]"}
+        sa_relationship_kwargs={"foreign_keys": "[CallHistory.receiver_id]"}
     )
 
 
@@ -117,7 +117,7 @@ class FriendRequestTable(SQLModel, table=True):
     )
 
 
-class CallHistoryTable(SQLModel, table=True):
+class CallHistory(SQLModel, table=True):
     __tablename__ = "call_history"
     id: Optional[int] = Field(default=None, primary_key=True)
     caller_id: int = Field(foreign_key="user.id", index=True, nullable=False)
@@ -125,14 +125,16 @@ class CallHistoryTable(SQLModel, table=True):
 
     receiver: Optional["UserModel"] = Relationship(
         back_populates="call_received",
-        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.receiver_id]"}
+        sa_relationship_kwargs={"foreign_keys": "[CallHistory.receiver_id]"}
     )
     caller: Optional["UserModel"] = Relationship(
         back_populates="call_made",
-        sa_relationship_kwargs={"foreign_keys": "[CallHistoryTable.caller_id]"}
+        sa_relationship_kwargs={"foreign_keys": "[CallHistory.caller_id]"}
     )
+    room_id: str = Field(nullable=True)
+    call_status: CallStatus = Field(default=CallStatus.NONE)
+    call_duration: int = Field(default=0)
 
-    duration: int = Field(default=0)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
@@ -208,18 +210,3 @@ class ReportUser(SQLModel, table=True):
     )
 
 
-class CallHistory(SQLModel, table=True):
-    __tablename__ = "call_history"
-
-    id: int = Field(primary_key=True, default=None)
-    caller_id: int = Field(foreign_key="user.id", index=True, nullable=False)
-    receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
-    room_id: str = Field(foreign_key="user.id", nullable=False)
-    call_status: CallStatus = Field(default=CallStatus.NONE)
-    call_duration: int = Field(default=0)
-    created_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), server_default=func.now())
-    )
-    updated_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    )

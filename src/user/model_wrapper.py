@@ -4,7 +4,7 @@ from typing import List, Optional, Mapping, Any
 from pydantic import BaseModel, Field
 from sqlalchemy.sql.functions import user
 
-from src.user.models import Gender, ConversationTable, UserModel, UserAdditionPicture, CallHistoryTable
+from src.user.models import Gender, ConversationTable, UserModel, UserAdditionPicture, CallHistory
 
 
 class UserDataResponse(BaseModel):
@@ -109,7 +109,7 @@ class CallDataResponse(BaseModel):
     created_at: datetime
 
     @classmethod
-    def call_history(cls, user_id: int, call_history: CallHistoryTable) -> CallDataResponse:
+    def call_history(cls, user_id: int, call_history: CallHistory) -> CallDataResponse:
         is_me = call_history.caller == user_id
         return cls(
             **call_history.model_dump(),
