@@ -165,7 +165,7 @@ async def user_message(sid, data):
 @sio.on("call")
 async def user_calls(sid, data):
     if data is not None:
-        await chatHandler.handle_call(data, db=next(get_session()))
+        await chatHandler.handle_call(sid=sid,data=data, db=next(get_session()))
 
 
 @sio.event
@@ -182,4 +182,3 @@ def root(db: Session = Depends(get_session)):
 app = socketio.ASGIApp(sio, other_asgi_app=fast_app)
 
 
-print(create_token(next(get_session()).query(UserModel).where(UserModel.id == 1).first(),isClient=True))

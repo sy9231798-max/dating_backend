@@ -35,8 +35,8 @@ def make_user(fake: Faker) -> UserModel:
         last_name=fake.last_name(),
         email=fake.unique.email(),
         phone_number=generate_indian_phone_number(),
-        profile_picture=f"uploads/20260410_123122_935700.png",
-        video_picture=f"uploads/20260410_123626_880724.mp4",
+        profile_picture=f"uploads/20260412_170232_706821.jpg",
+        video_picture=f"uploads/20260411_203720_977044.mp4",
         dob=dob.isoformat(),
         gender=gender,
         hobby=random.sample(HOBBIES, k=random.randint(1, 4)),
@@ -54,7 +54,7 @@ def make_user(fake: Faker) -> UserModel:
 
 def make_addition_images(userId: int) -> UserAdditionPicture:
     return UserAdditionPicture(
-        image_path="uploads/20260410_100125_488177.png" if userId % 2 == 0 else "uploads/20260410_123122_937257.png",
+        image_path="uploads/20260412_170232_709414.jpg" if userId % 2 == 0 else "uploads/20260426_090730_173040.jpg",
         user_id=userId
     )
 

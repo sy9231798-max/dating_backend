@@ -7,8 +7,7 @@ settings = get_settings()
 
 engine = create_engine(
     settings.SQLALCHEMY_DATABASE_URL,
-    echo=True,
-
+    echo=False,
 )
 
 

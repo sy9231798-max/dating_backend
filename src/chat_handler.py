@@ -11,6 +11,11 @@ from sqlmodel import Session, select
 from src.user.model_wrapper import ConversationDataResponse, MessageResponse
 from src.user.models import UserModel, ConversationTable, CallHistory
 from math import ceil
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 class MessageType(str, Enum):
@@ -138,6 +143,7 @@ class ChatHandler:
     async def handle_call(self, sid: Any, data: str, db: Session):
         data = json.loads(data)
         call_type = data["type"]
+        logger.error(f"Data {data}")
         match call_type:
             case "makeCall":
                 receiver = data["receiverId"]
@@ -189,13 +195,17 @@ class ChatHandler:
                     db.commit()
 
     def update_call_history(self, db: Session, room_id: str):
-        total_duration = datetime.datetime.now() - self.roomTimeHandler[room_id]
-        db_room = db.query(CallHistory).where(CallHistory.room_id == room_id).first()
-        if db_room:
-            db_room.call_duration = ceil(total_duration.total_seconds())
-            db.commit()
-        del self.roomHandler[room_id]
-        del self.roomTimeHandler[room_id]
+
+        logger.error(f"Room Handler {self.roomHandler}")
+        logger.error(f"Room Time Handler {self.roomTimeHandler}")
+        if room_id in self.roomHandler:
+            total_duration = datetime.datetime.now() - self.roomTimeHandler[room_id]
+            db_room = db.query(CallHistory).where(CallHistory.room_id == room_id).first()
+            if db_room:
+                db_room.call_duration = ceil(total_duration.total_seconds())
+                db.commit()
+            del self.roomHandler[room_id]
+            del self.roomTimeHandler[room_id]
 
     def find_key_by_user_id(self, user_id):
         for key, (uid, receiver) in self.roomHandler.items():
