@@ -1,13 +1,19 @@
-from typing import List, Optional, Type, Dict
+from typing import List, Optional, Type, Dict, Any
 import strawberry
+from boto3.compat import is_append_mode
 from fastapi import Depends, HTTPException
 from graphql import GraphQLError
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, selectinload
 from starlette.requests import Request
 from strawberry import Info
+from strawberry.extensions import SchemaExtension
 from strawberry.fastapi import GraphQLRouter
 
+from src.graphql.models import (
+    PublicUserDataType,
+    ExploreDataType, PageInfo
+)
 from src.database import get_session
 from src.graphql.models import UserDataType, AdditionImageType
 from src.user.models import UserModel
@@ -32,7 +38,8 @@ def require_role(info: Info, *allowed_roles: str) -> Dict:
         raise GraphQLError(f"Access denied. Required role(s): {', '.join(allowed_roles)}")
     return payload
 
-async def get_context(request: Request,db: Session = Depends(get_session)):
+
+async def get_context(request: Request, db: Session = Depends(get_session)):
     token = request.headers.get("Authorization", "")
     if token.startswith("Bearer "):
         token = token[7:]
@@ -44,8 +51,8 @@ async def get_context(request: Request,db: Session = Depends(get_session)):
     }
 
 
-def get_user_data_type(user: UserModel) -> UserDataType:
-    return UserDataType(
+def get_user_data_type(user: UserModel, is_admin: bool = False):
+    model = UserDataType(
         id=user.id,
         first_name=user.first_name,
         last_name=user.last_name,
@@ -72,26 +79,57 @@ def get_user_data_type(user: UserModel) -> UserDataType:
         gender=user.gender
     )
 
+    return model if is_admin else model.to_public()
+
+
+@strawberry.type
+class HelloResponse:
+    message: str
+    user: str
+
 
 @strawberry.type
 class Query:
     @strawberry.field
-    async def hello(self, info: Info) -> str:
-        return "Hello"
+    async def hello(self, info: Info) -> HelloResponse:
+        return HelloResponse(
+            message="Hello World!",
+            user="asdasd"
+        )
 
     @strawberry.field
-    async def explore(self, info: Info) -> List[UserDataType]:
-
-        require_role(info,"user","admin")
+    async def explore(self,
+                      info: Info,
+                      page: int = 1,
+                      page_size: int = 10) -> ExploreDataType:
+        payload = require_role(info, "user", "admin")
+        is_admin = payload.get("role") == "admin"
         db: Session = info.context["db"]
-        users: Optional[List[Type[UserModel]]] = (((db.query(UserModel)
-                                                    .options(selectinload(UserModel.addition_images)))
-                                                   .order_by(desc(UserModel.score)))
-                                                  .all())
-        return [
-            get_user_data_type(user)
-            for user in users
-        ]
+
+        total_count = db.query(UserModel).count()
+        total_pages = (total_count + page_size - 1) // page_size  # ceiling division
+        offset = (page - 1) * page_size
+        users: Optional[List[Type[UserModel]]] = (
+            db.query(UserModel)
+            .options(selectinload(UserModel.addition_images))
+            .order_by(desc(UserModel.score))
+            .offset(offset)
+            .limit(page_size)
+            .all()
+        )
+        return ExploreDataType(
+            items=[
+                get_user_data_type(user, is_admin=is_admin)
+                for user in users
+            ],
+            page_info=PageInfo(
+                has_next_page=page < total_pages,
+                has_previous_page=page > 1,
+                total_count=total_count,
+                total_pages=total_pages,
+                current_page=page,
+            )
+        )
 
     @strawberry.field
     async def user_detail(self, info: Info, id: int) -> UserDataType:

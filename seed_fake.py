@@ -9,6 +9,7 @@ from enum import Enum
 from src.database import settings
 from src.user.enums import Gender, AccountType
 from src.user.models import UserModel, UserAdditionPicture, FriendTable
+from src.token_helper import create_token
 
 DATABASE_URL = settings.SQLALCHEMY_DATABASE_URL
 
@@ -75,7 +76,11 @@ def seed(n: int = 100) -> None:
 
     fake = Faker("en_IN")
     Faker.seed(42)  # reproducible data; remove for random
+    with Session(engine) as session:
+        print(create_token(session.query(UserModel).where(UserModel.id == 1).first(),isClient=False))
 
+
+    return
     users = [make_user(fake) for _ in range(n)]
     with Session(engine) as session:
         session.add_all(users)
@@ -97,5 +102,5 @@ def seed(n: int = 100) -> None:
 
 from src.password_handler import pwd_context
 if __name__ == "__main__":
-    # seed(100)
-    print(pwd_context.hash("Admin@121"))
+    seed(100)
+    # print(create_token(db))
