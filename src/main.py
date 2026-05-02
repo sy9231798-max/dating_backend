@@ -11,7 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from strawberry import Info
 
-from src.graphql.graphql_handler import get_context, Query
+from src.graphql.graphql_handler import get_context, Query, graphql_app
 from src.instance_handler import init_chat_handler
 from src.api_config import api_router
 from src.database import engine, get_session, settings
@@ -56,11 +56,7 @@ fast_app.add_middleware(
     allow_headers=["*"],
 )
 
-schema = strawberry.Schema(Query)
 
-graphql_app = GraphQLRouter(schema, context_getter=get_context,
-                            dependencies=[Depends(verify_token)]
-                            )
 
 
 

@@ -97,5 +97,5 @@ def seed(n: int = 100) -> None:
 
 from src.password_handler import pwd_context
 if __name__ == "__main__":
-    seed(100)
-    # print(pwd_context.hash("Admin@121"))
+    # seed(100)
+    print(pwd_context.hash("Admin@121"))
