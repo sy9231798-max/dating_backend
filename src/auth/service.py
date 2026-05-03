@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import secrets
@@ -6,6 +7,7 @@ from sqlmodel import Session, select
 from starlette import status
 from starlette.datastructures import UploadFile
 
+from src.agent.models import AgentModel, AgentReferrals
 from src.auth.model_wrapper import LoginRequestBody, LoginResponseWrapper, ClientProfileRequestBody
 from src.auth.models import OtpModel
 from src.image_upload_helper import upload_image, upload_video
@@ -20,9 +22,8 @@ OTP_EXPIRY = 300
 def login_user(login_model: LoginRequestBody, db: Session):
     try:
 
-        db_user: Optional[UserModel] = db.exec(
-            select(UserModel).where(UserModel.phone_number == login_model.phone_number)).first()
         validate_phone_number(login_model.phone_number)
+        db_user: Optional[UserModel] = db.exec(select(UserModel).where(UserModel.phone_number == login_model.phone_number)).first()
         if db_user is None:
             user = UserModel(**login_model.dict())
             db.add(user)
@@ -31,7 +32,6 @@ def login_user(login_model: LoginRequestBody, db: Session):
 
             db_user = user
 
-        # otp = str(secrets.randbelow(1000000)).zfill(6)
         otp = "000000"
 
         otp_record = OtpModel(
@@ -125,22 +125,24 @@ def otp_verification(phone_number: str, otp: str, db: Session):
         error_code = status.HTTP_400_BAD_REQUEST
     else:
         error_code = status.HTTP_200_OK
+
     return LoginResponseWrapper(
         user_data=db_user,
         token=create_token(db_user, isClient=True),
         error_code=error_code,
+        reference="",
+        step1_error_message=str(db_user.step_1_error),
         step2_error_message=db_user.step_2_error,
         step3_error_message=db_user.step_3_error,
         addition_image=db_user.addition_images,
-        step1_error_message=str(db_user.step_1_error)
     )
 
     return {"message": "Login successful"}
 
 
 async def store_client_profile_image(
-        profile_picture: UploadFile,
-        other_picture: List[UploadFile],
+        profile_picture: Optional[UploadFile],
+        other_picture: Optional[List[UploadFile]],
         token: str,
         db: Session):
     try:
@@ -153,18 +155,21 @@ async def store_client_profile_image(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-        picture_path = await upload_image(profile_picture)
-        db_user.profile_picture = picture_path
 
-        addition_records = [
-            UserAdditionPicture(
-                image_path=await upload_image(i),
-                user_id=user_id
-            )
-            for i in other_picture
-        ]
+        if profile_picture is not None:
+            picture_path = await upload_image(profile_picture)
+            db_user.profile_picture = picture_path
 
-        db.add_all(addition_records)
+        if other_picture is not None:
+            addition_records = [
+                UserAdditionPicture(
+                    image_path=await upload_image(i),
+                    user_id=user_id
+                )
+                for i in other_picture
+            ]
+            db.add_all(addition_records)
+
         db.commit()
         return {
             "status": True,
@@ -177,6 +182,51 @@ async def store_client_profile_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to Login: {str(e)}"
+        )
+
+
+async def delete_addition_image(
+        id: int,
+        token: str,
+        db: Session):
+    try:
+        token_data = verify_token(token)
+        user_id = token_data.get("user_id")
+
+        db_user: Optional[UserModel] = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        db_addition: Optional[UserAdditionPicture] = db.query(UserAdditionPicture).filter(
+            UserAdditionPicture.id == id).first()
+
+        if not db_addition:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Addition picture not found"
+            )
+        if db_addition.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="This addition don't belong to you"
+            )
+
+        db.delete(db_addition)
+        db.commit()
+        return {
+            "status": True,
+            "message": "Addition Image Removed"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to remove addition image: {str(e)}"
         )
 
 
@@ -200,6 +250,48 @@ async def store_client_profile_video(
         return {
             "status": True,
             "message": "Video Uploaded"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to Login: {str(e)}"
+        )
+
+
+def store_reference(
+        reference_code: str,
+        token: str,
+        db: Session):
+    try:
+        token_data = verify_token(token)
+        user_id = token_data.get("user_id")
+
+        db_user: Optional[UserModel] = db.exec(select(UserModel).where(UserModel.id == user_id)).first()
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        db_agent = db.query(AgentModel).filter(AgentModel.agent_code == reference_code).first()
+        if not db_agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Please check reference code"
+            )
+
+        db_reference = AgentReferrals()
+        db_reference.user_id = user_id
+        db_reference.agent_id = db_agent.id
+
+        db.add(db_reference)
+        db.commit()
+        return {
+            "status": True,
+            "message": "Reference Code Uploaded"
         }
     except HTTPException:
         raise
@@ -248,7 +340,6 @@ def store_client_profile_detail(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to Login: {str(e)}"
         )
-
 
 
 def agent_code_verification(

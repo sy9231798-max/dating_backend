@@ -162,11 +162,6 @@ class BlockedUser(SQLModel, table=True):
         )
     )
     reason: str = Field(default="", nullable=False)
-    # blocked_user: Optional["UserModel"] = Relationship(
-    #     sa_relationship_kwargs={
-    #         "primaryjoin": "BlockedUser.blocked_id == UserModel.id"
-    #     }
-    # )
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
@@ -197,11 +192,6 @@ class ReportUser(SQLModel, table=True):
         )
     )
     reason: str = Field(default="", nullable=False)
-    # reported_user: Optional["UserModel"] = Relationship(
-    #     sa_relationship_kwargs={
-    #         "primaryjoin": "BlockedUser.blocked_id == UserModel.id"
-    #     }
-    # )
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )

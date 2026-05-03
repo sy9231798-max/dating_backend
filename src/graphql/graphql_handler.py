@@ -10,13 +10,14 @@ from strawberry import Info
 from strawberry.extensions import SchemaExtension
 from strawberry.fastapi import GraphQLRouter
 
+from src.graphql.models import (AdminCallHistoryDataType)
 from src.graphql.models import (
     PublicUserDataType,
-    ExploreDataType, PageInfo
+    ExploreDataType, PageInfo, DashboardCallHistoryDataType
 )
 from src.database import get_session
 from src.graphql.models import UserDataType, AdditionImageType
-from src.user.models import UserModel
+from src.user.models import UserModel, CallHistory
 from src.token_helper import verify_token
 
 
@@ -80,6 +81,20 @@ def get_user_data_type(user: UserModel, is_admin: bool = False):
     )
 
     return model if is_admin else model.to_public()
+
+
+def get_call_history_data_type(call: CallHistory) -> AdminCallHistoryDataType:
+    return AdminCallHistoryDataType(
+        id=call.id,
+        created_at=call.created_at,
+        updated_at=call.updated_at,
+        caller_id=call.caller_id,
+        receiver_id=call.receiver_id,
+        receiver=get_user_data_type(call.receiver, is_admin=True),
+        caller=get_user_data_type(call.caller, is_admin=True),
+        roomId=call.room_id,
+        duration=call.call_duration
+    )
 
 
 @strawberry.type
@@ -169,6 +184,43 @@ class Query:
             score=user.score,
             state=user.state,
             gender=user.gender
+        )
+
+    @strawberry.field
+    async def all_call_history(
+            self,
+            info: Info,
+            page: int = 1,
+            page_size: int = 10
+    ) -> DashboardCallHistoryDataType:
+        payload = require_role(info, "admin")
+        is_admin = payload.get("role") == "admin"
+        db: Session = info.context["db"]
+        total_count = db.query(CallHistory).count()
+        total_pages = (total_count + page_size - 1) // page_size  # ceiling division
+        offset = (page - 1) * page_size
+        call_history: Optional[List[Type[CallHistory]]] = (
+            db.query(CallHistory)
+            .options(
+                selectinload(CallHistory.receiver),
+                selectinload(CallHistory.caller),
+            )
+            .offset(offset)
+            .limit(page_size)
+            .all()
+        )
+        return DashboardCallHistoryDataType(
+            call_history=[
+                get_call_history_data_type(i)
+                for i in call_history
+            ],
+            page_info=PageInfo(
+                has_next_page=page < total_pages,
+                has_previous_page=page > 1,
+                total_count=total_count,
+                total_pages=total_pages,
+                current_page=page,
+            )
         )
 
 

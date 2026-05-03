@@ -9,7 +9,6 @@ from src.user.models import (
 
 class LoginRequestBody(BaseModel):
     phone_number: str
-    email: str
 
 
 class LoginResponseWrapper(BaseModel):
@@ -17,6 +16,7 @@ class LoginResponseWrapper(BaseModel):
     token: str
     addition_image: List[UserAdditionPicture]
     error_code: int
+    reference: str
     step1_error_message: str
     step2_error_message: str
     step3_error_message: str

@@ -6,10 +6,12 @@ from sqlalchemy import JSON, DateTime, func
 from typing import Optional, List
 from enum import Enum
 
+from agent.models import AgentModel
 from src.database import settings
 from src.user.enums import Gender, AccountType
 from src.user.models import UserModel, UserAdditionPicture, FriendTable
 from src.token_helper import create_token
+from super_admin.models import AdminModel
 
 DATABASE_URL = settings.SQLALCHEMY_DATABASE_URL
 
@@ -21,12 +23,15 @@ HOBBIES = [
 
 STEP_STATUSES = ["COMPLETED"]
 
+
 def generate_indian_phone_number():
     # First digit: 6-9
     first_digit = random.choice(['6', '7', '8', '9'])
     # Remaining 9 digits: 0-9
     remaining_digits = ''.join([str(random.randint(0, 9)) for _ in range(9)])
     return first_digit + remaining_digits
+
+
 def make_user(fake: Faker) -> UserModel:
     gender = Gender.FEMALE
     dob = fake.date_of_birth(minimum_age=18, maximum_age=60)
@@ -37,7 +42,7 @@ def make_user(fake: Faker) -> UserModel:
         email=fake.unique.email(),
         phone_number=generate_indian_phone_number(),
         profile_picture=f"uploads/20260412_170232_706821.jpg",
-        video_picture=f"uploads/20260411_203720_977044.mp4",
+        video_picture=f"uploads/20260503_134424_189352.mp4",
         dob=dob.isoformat(),
         gender=gender,
         hobby=random.sample(HOBBIES, k=random.randint(1, 4)),
@@ -64,9 +69,9 @@ def make_friends(userId: int) -> List[FriendTable]:
     return [
         FriendTable(
             user_id=userId,
-            friend_id= i
+            friend_id=i
         )
-        for i in range(1,1001)
+        for i in range(1, 1001)
     ]
 
 
@@ -76,31 +81,30 @@ def seed(n: int = 100) -> None:
 
     fake = Faker("en_IN")
     Faker.seed(42)  # reproducible data; remove for random
-    with Session(engine) as session:
-        print(create_token(session.query(UserModel).where(UserModel.id == 1).first(),isClient=False))
-
-
-    return
     users = [make_user(fake) for _ in range(n)]
+    super_admin = AdminModel()
+    super_admin.email = "admin@gmail.com"
+    super_admin.password = pwd_context.hash("Admin@121")
+    agent = AgentModel()
+    agent.agent_name = "Agent"
+    agent.agent_email = "example@gmail.com"
+    agent.agent_code = "123456"
+    agent.agent_phone = "9876543210"
     with Session(engine) as session:
+        session.add(super_admin)
+        session.add(agent)
         session.add_all(users)
         session.commit()
         for i in users:
             all_addition_images = [make_addition_images(i.id) for _ in range(3)]
             session.add_all(all_addition_images)
             session.commit()
-            # all_friends = make_friends(i.id)
-            # session.add_all(all_friends)
-            # session.commit()
-
-
-
-
 
     print(f"✅  Inserted {n} fake users into '{DATABASE_URL}'")
 
 
 from src.password_handler import pwd_context
+
 if __name__ == "__main__":
-    seed(100)
-    # print(create_token(db))
+    # seed(100)
+    print(pwd_context.hash("Admin@121"))

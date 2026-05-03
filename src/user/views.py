@@ -8,7 +8,7 @@ from starlette import status
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.database import get_session
 from src.mongo_helper import message_collection
-from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse
+from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse, CallDataResponse
 from src.user.service import (get_my_information, fetch_explore, fetch_profile_status, fetch_conversation,
                               fetch_all_message, sent_request, friend_request_action, fetch_call_history, blocked_user,
                               unblocked_user, report_user, call_availability_check)
@@ -119,7 +119,7 @@ def check_call_availability(
         )
 
 
-@router.get("/call-history")
+@router.get("/call-history",response_model=CallDataResponse)
 async def get_call_history(
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
         db: Session = Depends(get_session),

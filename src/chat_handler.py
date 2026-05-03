@@ -51,15 +51,6 @@ class ChatHandler:
         self.connected_users[user_id] = sid
         await self.sio.emit("user_online", user_id)
 
-    # MessageBody()
-    # {
-    #     "to": 1,
-    #     "from": 2,
-    #     "type": MessageType.NEW_MESSAGE,
-    #     "message_type": MessageContentType.Text,
-    #     "message": "Hello World"
-    # }
-
     async def handle_message(self, data: str, db: Session):
         data = json.loads(data)
         receiver = data["receiver"]
@@ -67,11 +58,10 @@ class ChatHandler:
         print(receiver in self.connected_users)
 
         print(self.connected_users.keys())
-        if receiver not in self.connected_users:
-            return
 
         message_type = data["type"]
 
+        print(f"{message_type}")
         match message_type:
             case "newMessage":
                 message_type = data["message_type"]
@@ -85,8 +75,11 @@ class ChatHandler:
                         last_message = "image"
                     case _:
                         last_message = "other"
+
                 db_conversation = db.exec(select(ConversationTable).where(ConversationTable.user_a_id == user_a,
                                                                           ConversationTable.user_b_id == user_b)).first()
+
+                print(f"Conversation {db_conversation is None}")
                 if not db_conversation:
                     conversation = ConversationTable(
                         user_a_id=user_a,
@@ -108,13 +101,17 @@ class ChatHandler:
                     )
                     print(f"New Conversation Added To {receiver}")
 
-                    await self.sio.emit("newConversation", ConversationDataResponse.conversation(receiver,
-                                                                                                 conversation=conversation).model_dump_json(),
-                                        to=self.connected_users[receiver])
+                    if receiver in self.connected_users:
+                        await self.sio.emit("newConversation",
+                                            ConversationDataResponse.conversation(receiver,
+                                                                                  conversation=conversation).model_dump_json(),
+                                            to=self.connected_users[receiver])
 
                     print(f"CurrentConversation Sent To Sender {sender}")
-                    await self.sio.emit("currentConversation", message.model_dump_json(),
-                                        to=self.connected_users[sender])
+                    await self.sio.emit("currentConversation",
+                                        message.model_dump_json(),
+                                        to=self.connected_users[sender]
+                                        )
                 else:
                     db_conversation.last_message = last_message
                     if sender == user_a:
@@ -131,7 +128,8 @@ class ChatHandler:
                         message=data.get("message", ""),
                         send_at=datetime.datetime.now()
                     )
-                await self.sio.emit("newMessage", message.model_dump_json(), to=self.connected_users[receiver])
+                if receiver in self.connected_users:
+                    await self.sio.emit("newMessage", message.model_dump_json(), to=self.connected_users[receiver])
                 await self.message_collection.insert_one(message.model_dump(exclude_none=True))
                 return
             case "typingIndictor":

@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Body, Header
 from fastapi import APIRouter, UploadFile, File
-from typing import List, Annotated
+from typing import List, Annotated, Optional
 from sqlmodel import Session
 from starlette import status
 
 from src.auth.model_wrapper import LoginRequestBody, LoginResponseWrapper, ClientProfileRequestBody
 from src.auth.service import login_user, store_client_profile_image, otp_verification, otp_resent, \
-    store_client_profile_video, store_client_profile_detail, agent_code_verification
+    store_client_profile_video, store_client_profile_detail, agent_code_verification, delete_addition_image, \
+    store_reference
 from src.database import get_session
 
 router = APIRouter()
@@ -62,13 +63,30 @@ async def resent_otp(
 
 @router.post("/client-profile-image")
 async def upload_client_profile_image(
-        profile_picture: UploadFile = File(...),
-        other_picture: List[UploadFile] = File(description="Upload multiple images"),
+        profile_picture: Optional[UploadFile] = File(None),
+        other_picture: Optional[List[UploadFile]] = File(None, description="Upload multiple images"),
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
         db: Session = Depends(get_session)
 ):
     try:
         return await store_client_profile_image(profile_picture, other_picture, db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to Login: {str(e)}"
+        )
+
+
+@router.delete("/remove-addition-image/{id}")
+async def remove_addition_image(
+        id: int,
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session)
+):
+    try:
+        return await delete_addition_image(id=id, db=db, token=user_token)
     except HTTPException:
         raise
     except Exception as e:
@@ -86,6 +104,27 @@ async def upload_client_profile_video(
 ):
     try:
         return await store_client_profile_video(profile_video, db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to Login: {str(e)}"
+        )
+
+
+@router.post("/submit-reference/{reference_id}")
+async def upload_client_profile_detail(
+        reference_id: str,
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session)
+):
+    try:
+        return store_reference(
+            reference_code=reference_id,
+            token=user_token,
+            db=db
+        )
     except HTTPException:
         raise
     except Exception as e:

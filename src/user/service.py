@@ -3,9 +3,11 @@ from typing import Optional
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorCollection
 from sqlalchemy.orm import selectinload, aliased
+from sqlalchemy.testing.config import options
 from sqlmodel import Session, select, or_, desc
 from starlette import status
 
+from src.agent.models import AgentReferrals
 from src.instance_handler import get_chat_handler
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.token_helper import verify_token, create_token
@@ -46,16 +48,17 @@ def fetch_profile_status(
     try:
         payload = verify_token(token)
         user_id = payload["user_id"]
-        db_user: Optional[UserModel] = db.get(UserModel, user_id)
+        db_user: Optional[UserModel] = db.query(UserModel).where(UserModel.id == user_id).options(
+            selectinload(UserModel.addition_images)).first()
         if db_user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User with id {user_id} not found"
             )
         any_error = (
-                db_user.step_1_error not in ["PENDING", "DONE"]
-                or db_user.step_2_error not in ["PENDING", "DONE"]
-                or db_user.step_3_error not in ["PENDING", "DONE"]
+                db_user.step_1_error not in ["PENDING", "COMPLETED"]
+                or db_user.step_2_error not in ["PENDING", "COMPLETED"]
+                or db_user.step_3_error not in ["PENDING", "COMPLETED"]
         )
         all_pending = (
                 db_user.step_1_error in ["PENDING"]
@@ -68,10 +71,21 @@ def fetch_profile_status(
             error_code = status.HTTP_400_BAD_REQUEST
         else:
             error_code = status.HTTP_200_OK
+
+        db_reference: Optional[AgentReferrals] = (db.query(AgentReferrals)
+                        .where(AgentReferrals.user_id == user_id)
+                        .options(selectinload(AgentReferrals.agent))
+                        .first())
+
+
+
+        print(f"Information {db_user.addition_images}")
+
         return LoginResponseWrapper(
             user_data=db_user,
             token=create_token(db_user, isClient=True),
             error_code=error_code,
+            reference=db_reference.agent.agent_code if db_reference else "",
             addition_image=db_user.addition_images,
             step2_error_message=db_user.step_2_error,
             step3_error_message=db_user.step_3_error,

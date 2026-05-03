@@ -59,7 +59,24 @@ class UserDataType(PublicUserDataType):
         )
 
 
+@strawberry.type
+class AdminCallHistoryDataType:
+    id: int
+    caller_id: int
+    receiver_id: int
+    receiver: UserDataType
+    caller: UserDataType
+    roomId: str
+    duration: int
+    created_at: datetime
+    updated_at: datetime
 
+
+class PublicCallHistoryDataType:
+    id: int
+    receiver: UserDataType
+    duration: int
+    created_at: datetime
 
 
 @strawberry.type
@@ -74,4 +91,9 @@ class PageInfo:
 @strawberry.type
 class ExploreDataType:
     items: List[UserDataType]
+    page_info: PageInfo
+
+@strawberry.type
+class DashboardCallHistoryDataType:
+    call_history : List[AdminCallHistoryDataType]
     page_info: PageInfo
