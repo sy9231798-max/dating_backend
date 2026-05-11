@@ -4,6 +4,8 @@ from typing import List, Optional, Type
 
 import socketio
 from fastapi import Depends
+
+from src.api_config import api_router
 from graphql import GraphQLError
 from sqlalchemy import event, desc
 from sqlalchemy.orm import selectinload, Session
@@ -13,7 +15,7 @@ from strawberry import Info
 
 from src.graphql.graphql_handler import get_context, Query, graphql_app
 from src.instance_handler import init_chat_handler
-from src.api_config import api_router
+
 from src.database import engine, get_session, settings
 from sqlmodel import SQLModel
 

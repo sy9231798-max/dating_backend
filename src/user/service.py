@@ -11,9 +11,9 @@ from src.agent.models import AgentReferrals
 from src.instance_handler import get_chat_handler
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.token_helper import verify_token, create_token
-from src.user.model_wrapper import ConversationDataResponse, MessageResponse, CallDataResponse
+from src.user.model_wrapper import ConversationDataResponse, MessageResponse, CallDataResponse, PaymentRequestResponse
 from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable, \
-    CallHistory, BlockedUser, ReportUser, CallHistory
+    CallHistory, BlockedUser, ReportUser, CallHistory, UserPaymentDetail
 from src.video_sdk_helper import get_room_id
 
 
@@ -73,11 +73,9 @@ def fetch_profile_status(
             error_code = status.HTTP_200_OK
 
         db_reference: Optional[AgentReferrals] = (db.query(AgentReferrals)
-                        .where(AgentReferrals.user_id == user_id)
-                        .options(selectinload(AgentReferrals.agent))
-                        .first())
-
-
+                                                  .where(AgentReferrals.user_id == user_id)
+                                                  .options(selectinload(AgentReferrals.agent))
+                                                  .first())
 
         print(f"Information {db_user.addition_images}")
 
@@ -458,6 +456,73 @@ def report_user(
         return {
             "message": "User reported",
         }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to report user: {str(e)}"
+        )
+
+
+def fetch_stored_payment_detail(
+        token: str,
+        db: Session,
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+
+        db_stored_payment_detail = db.query(UserPaymentDetail).where(UserPaymentDetail.user_id == user_id).first()
+        if db_stored_payment_detail is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Payment Detail Not Found"
+            )
+
+        return db_stored_payment_detail
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to report user: {str(e)}"
+        )
+
+
+def add_store_payment_detail(
+        token: str,
+        db: Session,
+        payment_detail: PaymentRequestResponse
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+
+        body = UserPaymentDetail(
+            **payment_detail.model_dump()
+        )
+
+        body.user_id = user_id
+
+        db.add(body)
+        db.commit()
+        db.refresh(body)
+        return body
     except HTTPException:
         raise
     except Exception as e:

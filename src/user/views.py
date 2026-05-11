@@ -2,16 +2,19 @@ from typing import List
 
 from fastapi import APIRouter, Header, Depends, HTTPException
 from fastapi.params import Body
-from sqlmodel import Session, select
+from sqlmodel import Session
 from starlette import status
 
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.database import get_session
 from src.mongo_helper import message_collection
-from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse, CallDataResponse
+from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, MessageResponse, CallDataResponse, \
+    PaymentRequestResponse
 from src.user.service import (get_my_information, fetch_explore, fetch_profile_status, fetch_conversation,
                               fetch_all_message, sent_request, friend_request_action, fetch_call_history, blocked_user,
-                              unblocked_user, report_user, call_availability_check)
+                              unblocked_user, report_user, call_availability_check, fetch_stored_payment_detail,
+                              add_store_payment_detail)
+from src.user.models import UserPaymentDetail
 
 router = APIRouter()
 
@@ -119,7 +122,7 @@ def check_call_availability(
         )
 
 
-@router.get("/call-history",response_model=CallDataResponse)
+@router.get("/call-history", response_model=CallDataResponse)
 async def get_call_history(
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
         db: Session = Depends(get_session),
@@ -232,4 +235,37 @@ async def report_request(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to report user: {str(e)}"
+        )
+
+
+@router.get("/stored-payment-detail")
+async def stored_payment_detail(
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return fetch_stored_payment_detail(db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get stored payment detail: {str(e)}"
+        )
+
+
+@router.post("/store-payment-detail", response_model=UserPaymentDetail)
+async def store_payment_detail(
+        payment_detail: PaymentRequestResponse,
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return add_store_payment_detail(db=db, token=user_token, payment_detail=payment_detail)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get stored payment detail: {str(e)}"
         )

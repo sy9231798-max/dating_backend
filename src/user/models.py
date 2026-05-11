@@ -7,8 +7,7 @@ from sqlmodel import Field, SQLModel, Relationship
 
 from enum import Enum
 
-from src.user.enums import Gender, AccountType,CallStatus
-
+from src.user.enums import Gender, AccountType, CallStatus
 
 
 class UserBaseModel(SQLModel):
@@ -200,3 +199,23 @@ class ReportUser(SQLModel, table=True):
     )
 
 
+class UserPaymentDetail(SQLModel, table=True):
+    __tablename__ = "user_payment_detail"
+    id: int = Field(primary_key=True, default=None)
+    user_id: int = Field(
+        sa_column=Column(
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True
+        )
+    )
+    account_number: str = Field(nullable=False, default="")
+    bank_name: str = Field(nullable=False, default="")
+    holder_name: str = Field(nullable=False, default="")
+    ifsc_code: str = Field(nullable=False, default="")
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )

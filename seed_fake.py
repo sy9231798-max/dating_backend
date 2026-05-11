@@ -6,12 +6,12 @@ from sqlalchemy import JSON, DateTime, func
 from typing import Optional, List
 from enum import Enum
 
-from agent.models import AgentModel
+from src.agent.models import AgentModel
 from src.database import settings
 from src.user.enums import Gender, AccountType
 from src.user.models import UserModel, UserAdditionPicture, FriendTable
 from src.token_helper import create_token
-from super_admin.models import AdminModel
+from src.super_admin.models import AdminModel
 
 DATABASE_URL = settings.SQLALCHEMY_DATABASE_URL
 
@@ -106,5 +106,5 @@ def seed(n: int = 100) -> None:
 from src.password_handler import pwd_context
 
 if __name__ == "__main__":
-    # seed(100)
-    print(pwd_context.hash("Admin@121"))
+    seed(10)
+    # print(pwd_context.hash("Admin@121"))

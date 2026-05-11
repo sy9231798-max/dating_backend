@@ -21,6 +21,7 @@ class UserDataResponse(BaseModel):
     state: str
     city: str
     lvl: int
+    coins: int
     is_pending: Optional[bool] = False
     score: int
     created_at: datetime
@@ -61,9 +62,7 @@ class UserDetailResponse(BaseModel):
 
     @classmethod
     def with_is_pending_status(cls, user: UserModel) -> UserDetailResponse:
-
         is_completed = user.step_1_error == "COMPLETED" and user.step_2_error == "COMPLETED" and user.step_3_error == "COMPLETED"
-
 
         return cls(**user.dict(),
                    addition_images=user.addition_images,
@@ -142,3 +141,10 @@ class MessageResponse(BaseModel):
             image=message.get("image"),
             send_at=message.get("send_at"),
         )
+
+
+class PaymentRequestResponse(BaseModel):
+    account_number: str
+    holder_name: str
+    bank_name: str
+    ifsc_code: str
