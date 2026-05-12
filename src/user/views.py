@@ -1,7 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Header, Depends, HTTPException
-from fastapi.params import Body
+from fastapi.params import Body, Query
 from sqlmodel import Session
 from starlette import status
 
@@ -13,8 +13,9 @@ from src.user.model_wrapper import UserDataResponse, ConversationDataResponse, M
 from src.user.service import (get_my_information, fetch_explore, fetch_profile_status, fetch_conversation,
                               fetch_all_message, sent_request, friend_request_action, fetch_call_history, blocked_user,
                               unblocked_user, report_user, call_availability_check, fetch_stored_payment_detail,
-                              add_store_payment_detail)
-from src.user.models import UserPaymentDetail
+                              add_store_payment_detail, remove_store_payment_detail, fetch_all_payment_history,
+                              create_withdraw_request, fetch_payment_history)
+from src.user.models import UserPaymentDetail, UserPaymentHistory
 
 router = APIRouter()
 
@@ -238,6 +239,22 @@ async def report_request(
         )
 
 
+@router.get("/payment-history", response_model=List[UserPaymentHistory])
+async def get_all_payment_history(
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return fetch_all_payment_history(db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get payment history: {str(e)}"
+        )
+
+
 @router.get("/stored-payment-detail")
 async def stored_payment_detail(
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
@@ -267,5 +284,72 @@ async def store_payment_detail(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get stored payment detail: {str(e)}"
+            detail=f"Failed to stored payment detail: {str(e)}"
+        )
+
+
+@router.delete("/delete-store-payment-detail", response_model=UserPaymentDetail)
+async def delete_store_payment_detail(
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return remove_store_payment_detail(db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete stored payment detail: {str(e)}"
+        )
+
+
+@router.get("/lifetime-earning")
+async def withdraw_request(
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return create_withdraw_request(db=db, token=user_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get lifetime earning: {str(e)}"
+        )
+
+
+@router.get("/get-withdraw-history")
+async def get_withdraw_history(
+        page: int = Query(1, ge=1),
+        page_size: int = Query(20, ge=1, le=100),
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return fetch_payment_history(db=db, token=user_token,page_item=page_size,page=page)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get withdraw history: {str(e)}"
+        )
+
+
+@router.post("/withdrawal-request")
+async def withdraw_request(
+        amount: int = Body(..., gt=0),
+        user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
+        db: Session = Depends(get_session),
+):
+    try:
+        return create_withdraw_request(db=db, token=user_token, amount=amount)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to make withdraw request: {str(e)}"
         )

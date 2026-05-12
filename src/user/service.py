@@ -1,19 +1,21 @@
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorCollection
+from sqlalchemy import func
 from sqlalchemy.orm import selectinload, aliased
 from sqlalchemy.testing.config import options
 from sqlmodel import Session, select, or_, desc
 from starlette import status
 
+from src.pagination_model import PaginatedResponse, PaginationMeta
 from src.agent.models import AgentReferrals
 from src.instance_handler import get_chat_handler
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.token_helper import verify_token, create_token
 from src.user.model_wrapper import ConversationDataResponse, MessageResponse, CallDataResponse, PaymentRequestResponse
 from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable, \
-    CallHistory, BlockedUser, ReportUser, CallHistory, UserPaymentDetail
+    CallHistory, BlockedUser, ReportUser, CallHistory, UserPaymentDetail, UserPaymentHistory
 from src.video_sdk_helper import get_room_id
 
 
@@ -465,6 +467,32 @@ def report_user(
         )
 
 
+def fetch_all_payment_history(
+        token: str,
+        db: Session,
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.exec(select(UserModel.id == user_id)).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+
+        all_history = db.query(UserPaymentHistory).filter(UserPaymentHistory.user_id == user_id).all()
+        return all_history
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch payment history: {str(e)}"
+        )
+
+
 def fetch_stored_payment_detail(
         token: str,
         db: Session,
@@ -493,7 +521,7 @@ def fetch_stored_payment_detail(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to report user: {str(e)}"
+            detail=f"Failed to get stored payment detail: {str(e)}"
         )
 
 
@@ -528,5 +556,170 @@ def add_store_payment_detail(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to report user: {str(e)}"
+            detail=f"Failed to add payment detail : {str(e)}"
+        )
+
+
+def remove_store_payment_detail(
+        token: str,
+        db: Session,
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+
+        db_detail = db.query(UserPaymentDetail).where(UserPaymentDetail.user_id == user_id).first()
+        if db_detail is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Payment Detail Not Found"
+            )
+        db.delete(db_detail)
+        db.commit()
+
+        return {
+            "status": True,
+            "message": "Successfully removed payment detail"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete payment detail: {str(e)}"
+        )
+
+
+def fetch_lifetime_earning(
+        token: str,
+        db: Session,
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+        all_payment: Optional[List[UserPaymentHistory]] = db.query(UserPaymentHistory).filter(
+            UserPaymentHistory.user_id == user_id).all()
+        if all_payment is None:
+            return {
+                "lifetime_earning": 0,
+                "current_earning": db_user.coins,
+            }
+        return {
+            "lifetime_earning": sum(i.amount for i in all_payment),
+            "current_earning": db_user.coins,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get lifetime earning: {str(e)}"
+        )
+
+
+def fetch_payment_history(
+        token: str,
+        db: Session,
+        page_item: Optional[int],
+        page: Optional[int] = 1,
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+        statement = select(UserPaymentHistory)
+
+        count_statement = select(func.count()).select_from(statement.subquery())
+        total = db.exec(count_statement).one()
+        offset = (page - 1) * page_item
+        statement = statement.order_by(desc(UserPaymentHistory.created_at)).offset(offset).limit(page_item)
+        user: Optional[List[UserModel]] = db.execute(statement).all()
+        total_pages = (total + page_item - 1) // page_item
+
+        return PaginatedResponse[UserPaymentHistory](
+            data=[i for i in user],
+            pagination=PaginationMeta(
+                page=page,
+                page_item=page_item,
+                total=total,
+                has_next=page < total_pages,
+                has_previous=page > 1,
+            )
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch payment history: {str(e)}"
+        )
+
+
+def create_withdraw_request(
+        amount: int,
+        token: str,
+        db: Session,
+):
+    try:
+        payload = verify_token(token)
+        user_id = payload["user_id"]
+
+        db_user: Optional[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found"
+            )
+        db_detail: Optional[UserPaymentDetail] = db.query(UserPaymentDetail).where(
+            UserPaymentDetail.user_id == user_id).first()
+        if db_detail is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Payment Detail Not Found"
+            )
+
+        if amount > db_user.coins:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You cannot withdraw {amount} coins max is {db_user.coins}"
+            )
+
+        db_user.coins -= amount
+        request = UserPaymentHistory()
+        request.user_id = user_id
+        request.bank_name = db_detail.bank_name
+        request.account_number = db_detail.account_number
+        request.amount = amount
+        db.add(request)
+        db.commit()
+        return {
+            "status": True,
+            "message": "Payment Request Generated"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to make withdraw request: {str(e)}"
         )
