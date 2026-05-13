@@ -1,9 +1,3 @@
-from src.user.models import (
-    UserModel,
-    UserAdditionPicture,
-    ConversationTable
-)
-
-from src.auth.models import (
-    OtpModel
-)
+from src.user.models import *
+from src.auth.models import *
+from src.super_admin.models import *

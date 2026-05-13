@@ -4,7 +4,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, func, JSON, UniqueConstraint, ForeignKey
 from sqlmodel import Field, SQLModel, Relationship
-
+from sqlalchemy import Enum as SAEnum
 from enum import Enum
 
 from src.user.enums import Gender, AccountType, CallStatus, PaymentStatus
@@ -234,7 +234,17 @@ class UserPaymentHistory(SQLModel, table=True):
     account_number: str = Field(nullable=False, default="")
     bank_name: str = Field(nullable=False, default="")
     amount: int = Field(nullable=False, default=0)
-    payment_status: PaymentStatus = Field(default=PaymentStatus.PENDING)
+    payment_status: PaymentStatus = Field(
+        sa_column=Column(
+            SAEnum(
+                PaymentStatus,
+                name="paymentstatus",
+                create_type=False
+            ),
+            nullable=False,
+            default=PaymentStatus.PENDING
+        )
+    )
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
