@@ -235,15 +235,7 @@ class UserPaymentHistory(SQLModel, table=True):
     bank_name: str = Field(nullable=False, default="")
     amount: int = Field(nullable=False, default=0)
     payment_status: PaymentStatus = Field(
-        sa_column=Column(
-            SAEnum(
-                PaymentStatus,
-                name="paymentstatus",
-                create_type=False
-            ),
-            nullable=False,
-            default=PaymentStatus.PENDING
-        )
+        default=PaymentStatus.PENDING,
     )
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())

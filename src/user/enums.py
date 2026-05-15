@@ -21,6 +21,5 @@ class CallStatus(str, Enum):
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
-    REJECTED = "rejected"
-    NONE = "none"
-    COMPLETED = "completed"
+    CREDIT = "credit"
+    DEBIT = "debit"

@@ -5,6 +5,7 @@ from fastapi.params import Body, Query
 from sqlmodel import Session
 from starlette import status
 
+from src.pagination_model import PaginatedResponse
 from src.auth.model_wrapper import LoginResponseWrapper
 from src.database import get_session
 from src.mongo_helper import message_collection
@@ -14,7 +15,7 @@ from src.user.service import (get_my_information, fetch_explore, fetch_profile_s
                               fetch_all_message, sent_request, friend_request_action, fetch_call_history, blocked_user,
                               unblocked_user, report_user, call_availability_check, fetch_stored_payment_detail,
                               add_store_payment_detail, remove_store_payment_detail, fetch_all_payment_history,
-                              create_withdraw_request, fetch_payment_history)
+                              create_withdraw_request, fetch_payment_history, fetch_lifetime_earning)
 from src.user.models import UserPaymentDetail, UserPaymentHistory
 
 router = APIRouter()
@@ -123,7 +124,7 @@ def check_call_availability(
         )
 
 
-@router.get("/call-history", response_model=CallDataResponse)
+@router.get("/call-history", response_model=List[CallDataResponse])
 async def get_call_history(
         user_token: str = Header(None, convert_underscores=True, alias="UserToken"),
         db: Session = Depends(get_session),
@@ -310,7 +311,7 @@ async def withdraw_request(
         db: Session = Depends(get_session),
 ):
     try:
-        return create_withdraw_request(db=db, token=user_token)
+        return fetch_lifetime_earning(db=db, token=user_token)
     except HTTPException:
         raise
     except Exception as e:
@@ -320,7 +321,7 @@ async def withdraw_request(
         )
 
 
-@router.get("/get-withdraw-history")
+@router.get("/get-withdraw-history",response_model=PaginatedResponse[UserPaymentHistory])
 async def get_withdraw_history(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1, le=100),

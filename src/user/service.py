@@ -17,6 +17,7 @@ from src.user.model_wrapper import ConversationDataResponse, MessageResponse, Ca
 from src.user.models import UserModel, AccountType, ConversationTable, FriendTable, FriendRequestTable, \
     CallHistory, BlockedUser, ReportUser, CallHistory, UserPaymentDetail, UserPaymentHistory
 from src.video_sdk_helper import get_room_id
+from src.user.enums import PaymentStatus
 
 
 def get_my_information(
@@ -611,16 +612,32 @@ def fetch_lifetime_earning(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User not found"
             )
-        all_payment: Optional[List[UserPaymentHistory]] = db.query(UserPaymentHistory).filter(
-            UserPaymentHistory.user_id == user_id).all()
+        all_payment: List[UserPaymentHistory] = (
+            db.query(UserPaymentHistory)
+            .where(
+                UserPaymentHistory.user_id == user_id,
+                UserPaymentHistory.payment_status == PaymentStatus.CREDIT
+            )
+            .all()
+        )
+
+        all_debit_payment: List[UserPaymentHistory] = (
+            db.query(UserPaymentHistory)
+            .where(UserPaymentHistory.user_id == user_id ,UserPaymentHistory.payment_status != PaymentStatus.CREDIT)
+            .all()
+        )
         if all_payment is None:
             return {
                 "lifetime_earning": 0,
                 "current_earning": db_user.coins,
             }
+
+        lifetime_earning: int = sum(i.amount for i in all_payment)
+
+        current_earning: int = sum(i.amount for i in all_debit_payment)
         return {
-            "lifetime_earning": sum(i.amount for i in all_payment),
-            "current_earning": db_user.coins,
+            "lifetime_earning": lifetime_earning,
+            "current_earning": lifetime_earning - current_earning,
         }
     except HTTPException:
         raise
@@ -647,13 +664,15 @@ def fetch_payment_history(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User not found"
             )
-        statement = select(UserPaymentHistory)
+        statement = select(UserPaymentHistory).where(UserPaymentHistory.user_id == user_id,
+                                                     UserPaymentHistory.payment_status != PaymentStatus.CREDIT)
 
         count_statement = select(func.count()).select_from(statement.subquery())
         total = db.exec(count_statement).one()
+
         offset = (page - 1) * page_item
         statement = statement.order_by(desc(UserPaymentHistory.created_at)).offset(offset).limit(page_item)
-        user: Optional[List[UserModel]] = db.execute(statement).all()
+        user = db.exec(statement).all()
         total_pages = (total + page_item - 1) // page_item
 
         return PaginatedResponse[UserPaymentHistory](
