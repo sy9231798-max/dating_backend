@@ -1,14 +1,16 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
 from src.user.models import (
     UserModel, Gender, UserAdditionPicture
 )
+from src.user.enums import AccountType
 
 
 class LoginRequestBody(BaseModel):
     phone_number: str
+    account_type: Optional[AccountType] = AccountType.AGENT
 
 
 class LoginResponseWrapper(BaseModel):

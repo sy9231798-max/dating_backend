@@ -53,6 +53,8 @@ def fetch_profile_status(
         user_id = payload["user_id"]
         db_user: Optional[UserModel] = db.query(UserModel).where(UserModel.id == user_id).options(
             selectinload(UserModel.addition_images)).first()
+
+        print(db_user.addition_images)
         if db_user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -623,7 +625,7 @@ def fetch_lifetime_earning(
 
         all_debit_payment: List[UserPaymentHistory] = (
             db.query(UserPaymentHistory)
-            .where(UserPaymentHistory.user_id == user_id ,UserPaymentHistory.payment_status != PaymentStatus.CREDIT)
+            .where(UserPaymentHistory.user_id == user_id, UserPaymentHistory.payment_status != PaymentStatus.CREDIT)
             .all()
         )
         if all_payment is None:
