@@ -162,8 +162,7 @@ def fetch_explore(
         # .options(selectinload(UserModel.addition_images))
         # .order_by(desc(UserModel.score)))
         # users = db.exec(statement).all()
-        users = db.query(UserModel).options(selectinload(UserModel.addition_images)).order_by(
-            desc(UserModel.score)).all()
+        users = db.query(UserModel).where(UserModel.account_type == AccountType.AGENT).options(selectinload(UserModel.addition_images)).order_by(desc(UserModel.score)).all()
         return users
     except HTTPException:
         raise
