@@ -25,7 +25,7 @@ class AgentReferrals(SQLModel, table=True):
     __tablename__ = "agent_referrals"
     id: Optional[int] = Field(default=None, primary_key=True)
     agent_id: Optional[int] = Field(foreign_key="agent.id", nullable=False)
-    user_id: Optional[int] = Field(foreign_key="user.id", nullable=False)
+    user_id: Optional[int] = Field(foreign_key="users.id", nullable=False)
     agent: Optional["AgentModel"] = Relationship(back_populates="referrals")
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())

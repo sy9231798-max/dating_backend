@@ -28,7 +28,7 @@ class UserBaseModel(SQLModel):
 
 
 class UserModel(UserBaseModel, table=True):
-    __tablename__ = "user"
+    __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
@@ -45,7 +45,7 @@ class UserModel(UserBaseModel, table=True):
     )
     is_active: bool = Field(default=False)
     addition_images: List["UserAdditionPicture"] = Relationship(
-        back_populates="user",
+        back_populates="users",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
 
@@ -63,8 +63,8 @@ class UserAdditionPicture(SQLModel, table=True):
     __tablename__ = "addition_image"
     id: Optional[int] = Field(default=None, primary_key=True)
     image_path: str = Field(nullable=False)
-    user_id: Optional[int] = Field(foreign_key="user.id", nullable=False)
-    user: Optional["UserModel"] = Relationship(back_populates="addition_images")
+    user_id: Optional[int] = Field(foreign_key="users.id", nullable=False)
+    users: Optional["UserModel"] = Relationship(back_populates="addition_images")
 
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
@@ -77,8 +77,8 @@ class UserAdditionPicture(SQLModel, table=True):
 class ConversationTable(SQLModel, table=True):
     __tablename__ = "conversation"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_a_id: int = Field(foreign_key="user.id", nullable=False)
-    user_b_id: int = Field(foreign_key="user.id", nullable=False)
+    user_a_id: int = Field(foreign_key="users.id", nullable=False)
+    user_b_id: int = Field(foreign_key="users.id", nullable=False)
     unread_count_a: int = Field(default=0)
     unread_count_b: int = Field(default=0)
     last_message: str = Field(default=None)
@@ -99,8 +99,8 @@ class ConversationTable(SQLModel, table=True):
 class FriendTable(SQLModel, table=True):
     __tablename__ = "friend"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
-    friend_id: int = Field(foreign_key="user.id", nullable=False)
+    user_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    friend_id: int = Field(foreign_key="users.id", nullable=False)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
@@ -109,8 +109,8 @@ class FriendTable(SQLModel, table=True):
 class FriendRequestTable(SQLModel, table=True):
     __tablename__ = "friend_request"
     id: Optional[int] = Field(default=None, primary_key=True)
-    sender_id: int = Field(foreign_key="user.id", index=True, nullable=False)
-    receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    sender_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    receiver_id: int = Field(foreign_key="users.id", index=True, nullable=False)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
@@ -119,8 +119,8 @@ class FriendRequestTable(SQLModel, table=True):
 class CallHistory(SQLModel, table=True):
     __tablename__ = "call_history"
     id: Optional[int] = Field(default=None, primary_key=True)
-    caller_id: int = Field(foreign_key="user.id", index=True, nullable=False)
-    receiver_id: int = Field(foreign_key="user.id", index=True, nullable=False)
+    caller_id: int = Field(foreign_key="users.id", index=True, nullable=False)
+    receiver_id: int = Field(foreign_key="users.id", index=True, nullable=False)
 
     receiver: Optional["UserModel"] = Relationship(
         back_populates="call_received",
@@ -148,14 +148,14 @@ class BlockedUser(SQLModel, table=True):
     id: int = Field(primary_key=True, default=None)
     blocker_id: int = Field(
         sa_column=Column(
-            ForeignKey("user.id", ondelete="CASCADE"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
             index=True
         )
     )
     blocked_id: int = Field(
         sa_column=Column(
-            ForeignKey("user.id", ondelete="CASCADE"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
             index=True
         )
@@ -178,14 +178,14 @@ class ReportUser(SQLModel, table=True):
     id: int = Field(primary_key=True, default=None)
     reporter_id: int = Field(
         sa_column=Column(
-            ForeignKey("user.id", ondelete="CASCADE"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
             index=True
         )
     )
     reported_id: int = Field(
         sa_column=Column(
-            ForeignKey("user.id", ondelete="CASCADE"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
             index=True
         )
@@ -204,7 +204,7 @@ class UserPaymentDetail(SQLModel, table=True):
     id: int = Field(primary_key=True, default=None)
     user_id: int = Field(
         sa_column=Column(
-            ForeignKey("user.id", ondelete="CASCADE"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
             index=True
         )
@@ -226,7 +226,7 @@ class UserPaymentHistory(SQLModel, table=True):
     id: int = Field(primary_key=True, default=None)
     user_id: int = Field(
         sa_column=Column(
-            ForeignKey("user.id", ondelete="CASCADE"),
+            ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
             index=True
         )
